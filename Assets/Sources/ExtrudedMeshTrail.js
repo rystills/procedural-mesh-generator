@@ -95,6 +95,7 @@ function LateUpdate () {
 	
 	// Rebuild the extrusion mesh	
 	MeshExtrusion.ExtrudeMesh (srcMesh, GetComponent(MeshFilter).mesh, finalSections, precomputedEdges, invertFaces);
+    NormalSolver.RecalculateNormals(GetComponent(MeshFilter).mesh,45);
 }
 
 @script RequireComponent (MeshFilter)
