@@ -17,7 +17,7 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.SetPixel(1, 1, Color.yellow);
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
-		generateWavyPlane(10);
+        generateMesh("standard",10);
 	}
 
     //initialize a new procedural mesh (n = number of quads)
@@ -28,6 +28,15 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //construct vertices (n = number of quads)
+    void buildVerts(int n) {
+        for (int x = 0, listPos = 0; x < n + 1; x++) {
+            for (int y = 0; y < n + 1; y++, listPos++) {
+                newVertices.SetValue(new Vector3(x * .55f, 0, y * .55f), listPos);
+            }
+        }
+    }
+
+    //construct vertices with a random wave on the y axis (n = number of quads)
     void buildVertsWavy(int n) {
         float averageLocalY = 0f;
         for (int x = 0, listPos = 0; x < n + 1; x++) {
@@ -97,9 +106,14 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     // construct a flat nxn rectangular mesh (n = number of pieces to split the mesh into)
-    void generateWavyPlane(int n) {
+    void generateMesh(string mode, int n) {
         initNewMesh(n);
-        buildVertsWavy(n);
+        if (mode == "standard") {
+            buildVerts(n);
+        }
+        else if (mode == "wavy") {
+            buildVertsWavy(n);
+        }
         buildTris(n);
         buildUVs();
         finalizeMesh();	
