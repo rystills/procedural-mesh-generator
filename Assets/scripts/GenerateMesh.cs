@@ -17,7 +17,7 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.SetPixel(1, 1, Color.yellow);
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
-        generateMesh("standard",10);
+        generateMesh("wavy",10);
 	}
 
     //initialize a new procedural mesh (n = number of quads)
@@ -31,7 +31,7 @@ public class GenerateMesh : MonoBehaviour {
     void buildVerts(int n) {
         for (int x = 0, listPos = 0; x < n + 1; x++) {
             for (int y = 0; y < n + 1; y++, listPos++) {
-                newVertices.SetValue(new Vector3(x * .55f, 0, y * .55f), listPos);
+                newVertices[listPos] = new Vector3(x * .55f, 0, y * .55f);
             }
         }
     }
@@ -58,28 +58,26 @@ public class GenerateMesh : MonoBehaviour {
                         averageLocalY = (newVertices[listPos - 1].y + newVertices[listPos - (n + 1) - 1].y + newVertices[listPos - (n + 1)].y + newVertices[listPos - (n + 1) + 1].y) / 4;
                     }
                 }
-                newVertices.SetValue(new Vector3(x * .55f, averageLocalY + (Random.Range(-0.4f, 0.4f)), y * .55f), listPos);
+                newVertices[listPos] = new Vector3(x * .55f, averageLocalY + (Random.Range(-0.4f, 0.4f)), y * .55f);
             }
         }
     }
 
-    //construct trianges (n = number of quads) 
+    //break quads down into trianges (n = number of quads) 
     void buildTris(int n) {
         for (int x = 0, listPos = 0; x < (n); x += 1) {
             for (int y = 0; y < (n); y += 1, listPos += 6) {
-                newTrianglePoints.SetValue(((n + 1) * x) + (y), listPos);
-                newTrianglePoints.SetValue(((n + 1) * x) + (y + 1), listPos + 1);
-                newTrianglePoints.SetValue(((n + 1) * x) + (y + (n + 1)), listPos + 2);
-                newTrianglePoints.SetValue(((n + 1) * x) + (y + (n + 1)), listPos + 3);
-                newTrianglePoints.SetValue(((n + 1) * x) + (y + 1), listPos + 4);
-                newTrianglePoints.SetValue(((n + 1) * x) + (y + (n + 2)), listPos + 5);
+                newTrianglePoints[listPos] = ((n + 1) * x) + (y);
+                newTrianglePoints[listPos + 4] = newTrianglePoints[listPos + 1] = ((n + 1) * x) + (y + 1);
+                newTrianglePoints[listPos + 3] = newTrianglePoints[listPos + 2] = ((n + 1) * x) + (y + (n + 1));
+                newTrianglePoints[listPos + 5] = ((n + 1) * x) + (y + (n + 2));
             }
         }
     }
 
-    //construct UVs
-    void buildUVs() {
-        for (int i = 0; i < newUVs.Length; newUVs[i] = new Vector2(newVertices[i].x / (5), newVertices[i].z / (5)), i++) ;
+    //construct UVs, repeating based on some scale factor (for a flat UVW unwrap with a straight-up orientation, we can just map to x,z coords)
+    void buildUVs(float factor) {
+        for (int i = 0; i < newUVs.Length; newUVs[i] = new Vector2(newVertices[i].x / factor, newVertices[i].z / factor), i++) ;
     }
 
     //construct the new mesh, and attach the appropriate components
@@ -115,7 +113,7 @@ public class GenerateMesh : MonoBehaviour {
             buildVertsWavy(n);
         }
         buildTris(n);
-        buildUVs();
+        buildUVs(n/2);
         finalizeMesh();	
 	}	
 }
