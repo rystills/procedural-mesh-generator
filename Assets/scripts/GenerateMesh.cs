@@ -17,7 +17,7 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.SetPixel(1, 1, Color.yellow);
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
-        generateMesh("wavy",10);
+        generatePipe("normal",10, true);
 	}
 
     //initialize a new procedural mesh (n = number of quads)
@@ -28,10 +28,10 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //construct vertices (n = number of quads)
-    void buildVerts(int n) {
+    void buildVerts(int n, float xChange = .55f, float yChange = .55f, bool orientUp = false) {
         for (int x = 0, listPos = 0; x < n + 1; x++) {
             for (int y = 0; y < n + 1; y++, listPos++) {
-                newVertices[listPos] = new Vector3(x * .55f, 0, y * .55f);
+                newVertices[listPos] = new Vector3(x * xChange, y * yChange * (orientUp ? 1 : 0), y * yChange * (orientUp ? 0 : 1));
             }
         }
     }
@@ -76,8 +76,8 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //construct UVs, repeating based on some scale factor (for a flat UVW unwrap with a straight-up orientation, we can just map to x,z coords)
-    void buildUVs(float factor) {
-        for (int i = 0; i < newUVs.Length; newUVs[i] = new Vector2(newVertices[i].x / factor, newVertices[i].z / factor), i++) ;
+    void buildUVs(float factor, bool orientUp = false) {
+        for (int i = 0; i < newUVs.Length; newUVs[i] = new Vector2(newVertices[i].x / factor, (orientUp ? newVertices[i].y : newVertices[i].z) / factor), i++) ;
     }
 
     //construct the new mesh, and attach the appropriate components
@@ -103,10 +103,19 @@ public class GenerateMesh : MonoBehaviour {
         }
     }
 
+    //construct an extruded, closed surface, with shape depending on input mode (n = number of pieces to split the pipe into)
+    void generatePipe(string mode, int n, bool orientUp = false) {
+        initNewMesh(n);
+        buildVerts(n, 1, .1f, orientUp);
+        buildTris(n);
+        buildUVs(n / 2, orientUp);
+        finalizeMesh();
+    }
+
     // construct a flat nxn rectangular mesh (n = number of pieces to split the mesh into)
     void generateMesh(string mode, int n) {
         initNewMesh(n);
-        if (mode == "standard") {
+        if (mode == "normal") {
             buildVerts(n);
         }
         else if (mode == "wavy") {
