@@ -17,7 +17,7 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.SetPixel(1, 1, Color.yellow);
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
-        generatePipe("normal",10, true);
+        generatePipe("normal",10);
 	}
 
     //initialize a new procedural mesh (n = number of quads)
@@ -28,8 +28,8 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //construct vertices (n = number of quads)
-    void buildVerts(int n, float xChange = .55f, float yChange = .55f, bool orientUp = false) {
-        for (int x = 0, listPos = 0; x < n + 1; x++) {
+    void buildVerts(int n, float xChange = .55f, float yChange = .55f, bool orientUp = false, int startOffset = 0) {
+        for (int x = 0, listPos = startOffset; x < n + 1; x++) {
             for (int y = 0; y < n + 1; y++, listPos++) {
                 newVertices[listPos] = new Vector3(x * xChange, y * yChange * (orientUp ? 1 : 0), y * yChange * (orientUp ? 0 : 1));
             }
@@ -64,8 +64,8 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //break quads down into trianges (n = number of quads) 
-    void buildTris(int n) {
-        for (int x = 0, listPos = 0; x < (n); x += 1) {
+    void buildTris(int n, int startOffset = 0) {
+        for (int x = 0, listPos = startOffset; x < (n); x += 1) {
             for (int y = 0; y < (n); y += 1, listPos += 6) {
                 newTrianglePoints[listPos] = ((n + 1) * x) + (y);
                 newTrianglePoints[listPos + 4] = newTrianglePoints[listPos + 1] = ((n + 1) * x) + (y + 1);
@@ -76,8 +76,9 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //construct UVs, repeating based on some scale factor (for a flat UVW unwrap with a straight-up orientation, we can just map to x,z coords)
-    void buildUVs(float factor, bool orientUp = false) {
-        for (int i = 0; i < newUVs.Length; newUVs[i] = new Vector2(newVertices[i].x / factor, (orientUp ? newVertices[i].y : newVertices[i].z) / factor), i++) ;
+    void buildUVs(float factor, bool orientUp = false, int n = 0, int startOffset = 0) {
+        n = (n == 0 ? newUVs.Length : n);
+        for (int i = startOffset; i < startOffset + n; newUVs[i] = new Vector2(newVertices[i].x / factor, (orientUp ? newVertices[i].y : newVertices[i].z) / factor), i++) ;
     }
 
     //construct the new mesh, and attach the appropriate components
@@ -104,11 +105,17 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //construct an extruded, closed surface, with shape depending on input mode (n = number of pieces to split the pipe into)
-    void generatePipe(string mode, int n, bool orientUp = false) {
-        initNewMesh(n);
-        buildVerts(n, 1, .1f, orientUp);
+    void generatePipe(string mode, int n) {
+        initNewMesh(2*n);
+
+        buildVerts(n, 1, .1f, false);
         buildTris(n);
-        buildUVs(n / 2, orientUp);
+        buildUVs(n / 2, false,newUVs.Length / 2,0);
+
+        buildVerts(n, 1, .1f, true,n);
+        buildTris(n,n);
+        buildUVs(n / 2, true, newUVs.Length / 2, newUVs.Length / 2);
+
         finalizeMesh();
     }
 
