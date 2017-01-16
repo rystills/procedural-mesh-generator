@@ -25,11 +25,11 @@ public class GenerateMesh : MonoBehaviour {
         initNewMesh(n, 4);
 
         buildVerts(n, 1, .1f, false);
-        buildTris(n);
+        buildTris(n,0,true);
         buildUVs(n, false, newUVs.Length / 2, 0);
 
         buildVerts(n, 1, .1f, true, (n + 1) * (n + 1),0,0,.1f);
-        buildTris(n, 6 * n * n);
+        buildTris(n, 6 * n * n,true);
         buildUVs(n, true, newUVs.Length / 4, (n + 1) * (n + 1));
 
         buildVerts(n, 1, .1f, true, 2 * ((n + 1) * (n + 1)));
@@ -101,14 +101,14 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //break quads down into trianges (n = number of quads) 
-    void buildTris(int n, int startOffset = 0) {
+    void buildTris(int n, int startOffset = 0,bool flipNormals = false) {
         for (int x = 0, listPos = startOffset; x < (n); x += 1) {
             for (int y = 0; y < (n); y += 1, listPos += 6) {
                 int offsetX = x, offsetY = 4 * (int)(startOffset / (6 * n * n)) + y;
-                newTrianglePoints[listPos] = ((n + 1) * offsetX) + (offsetY);
+                newTrianglePoints[listPos + (flipNormals ? 5 : 0)] = ((n + 1) * offsetX) + (offsetY);
                 newTrianglePoints[listPos + 4] = newTrianglePoints[listPos + 1] = ((n + 1) * offsetX) + (offsetY + 1);
                 newTrianglePoints[listPos + 3] = newTrianglePoints[listPos + 2] = ((n + 1) * offsetX) + (offsetY + (n + 1));
-                newTrianglePoints[listPos + 5] = ((n + 1) * offsetX) + (offsetY + (n + 2));
+                newTrianglePoints[listPos + (flipNormals ? 0 : 5)] = ((n + 1) * offsetX) + (offsetY + (n + 2));
             }
         }
     }
