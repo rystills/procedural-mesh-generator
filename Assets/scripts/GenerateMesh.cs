@@ -17,13 +17,42 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.SetPixel(1, 1, Color.yellow);
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
-        generatePipe("normal",10);
+        generatePipe("normal",1);
 	}
 
+    //construct an extruded, closed surface, with shape depending on input mode (n = number of pieces to split the pipe into)
+    void generatePipe(string mode, int n) {
+        initNewMesh(n, 2);
+
+        buildVerts(n, 1, .1f, false);
+        buildTris(n);
+        buildUVs(n, false, newUVs.Length / 2, 0);
+
+        buildVerts(n, 1, .1f, true, (n + 1) * (n + 1));
+        buildTris(n, 6 * n * n);
+        buildUVs(n, true, newUVs.Length / 2, (n + 1) * (n + 1));
+
+        finalizeMesh();
+    }
+
+    // construct a flat nxn rectangular mesh (n = number of pieces to split the mesh into)
+    void generateMesh(string mode, int n) {
+        initNewMesh(n);
+        if (mode == "normal") {
+            buildVerts(n);
+        }
+        else if (mode == "wavy") {
+            buildVertsWavy(n);
+        }
+        buildTris(n);
+        buildUVs(n / 2);
+        finalizeMesh();
+    }
+
     //initialize a new procedural mesh (n = number of quads)
-    void initNewMesh(int n) {
-        newVertices = new Vector3[(n + 1) * (n + 1)]; //one square mesh has 4 vertices, and each subsequent triange adds one new vert (therefore two per additional quad)
-        newTrianglePoints = new int[6 * n * n]; //n^2 total quads. each quad is 2 tris. multiply by 3 as each tri is described by 3 points
+    void initNewMesh(int n, int factor = 1) {
+        newVertices = new Vector3[factor * ((n + 1) * (n + 1))]; //one square mesh has 4 vertices, and each subsequent triange adds one new vert (therefore two per additional quad)
+        newTrianglePoints = new int[factor * (6 * n * n)]; //n^2 total quads. each quad is 2 tris. multiply by 3 as each tri is described by 3 points
         newUVs = new Vector2[newVertices.Length]; //number of UVs should match number of vertices for proper mapping
     }
 
@@ -103,33 +132,4 @@ public class GenerateMesh : MonoBehaviour {
             renderer.material.mainTexture = debugTex;
         }
     }
-
-    //construct an extruded, closed surface, with shape depending on input mode (n = number of pieces to split the pipe into)
-    void generatePipe(string mode, int n) {
-        initNewMesh(2*n);
-
-        buildVerts(n, 1, .1f, false);
-        buildTris(n);
-        buildUVs(n / 2, false,newUVs.Length / 2,0);
-
-        buildVerts(n, 1, .1f, true,n);
-        buildTris(n,n);
-        buildUVs(n / 2, true, newUVs.Length / 2, newUVs.Length / 2);
-
-        finalizeMesh();
-    }
-
-    // construct a flat nxn rectangular mesh (n = number of pieces to split the mesh into)
-    void generateMesh(string mode, int n) {
-        initNewMesh(n);
-        if (mode == "normal") {
-            buildVerts(n);
-        }
-        else if (mode == "wavy") {
-            buildVertsWavy(n);
-        }
-        buildTris(n);
-        buildUVs(n/2);
-        finalizeMesh();	
-	}	
 }
