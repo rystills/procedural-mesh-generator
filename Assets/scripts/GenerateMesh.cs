@@ -22,15 +22,23 @@ public class GenerateMesh : MonoBehaviour {
 
     //construct an extruded, closed surface, with shape depending on input mode (n = number of pieces to split the pipe into)
     void generatePipe(string mode, int n) {
-        initNewMesh(n, 2);
+        initNewMesh(n, 4);
 
         buildVerts(n, 1, .1f, false);
         buildTris(n);
         buildUVs(n, false, newUVs.Length / 2, 0);
 
-        buildVerts(n, 1, .1f, true, (n + 1) * (n + 1));
+        buildVerts(n, 1, .1f, true, (n + 1) * (n + 1),0,0,.1f);
         buildTris(n, 6 * n * n);
-        buildUVs(n, true, newUVs.Length / 2, (n + 1) * (n + 1));
+        buildUVs(n, true, newUVs.Length / 4, (n + 1) * (n + 1));
+
+        buildVerts(n, 1, .1f, true, 2 * ((n + 1) * (n + 1)));
+        buildTris(n, 2 * (6 * n * n));
+        buildUVs(n, true, newUVs.Length / 4, 2 * ((n + 1) * (n + 1)));
+
+        buildVerts(n, 1, .1f, false, 3 * ((n + 1) * (n + 1)), 0, .1f, 0);
+        buildTris(n, 3 * (6 * n * n));
+        buildUVs(n, false, newUVs.Length / 4, 3 * ((n + 1) * (n + 1)));
 
         finalizeMesh();
     }
@@ -57,10 +65,10 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //construct vertices (n = number of quads)
-    void buildVerts(int n, float xChange = .55f, float yChange = .55f, bool orientUp = false, int startOffset = 0) {
+    void buildVerts(int n, float xChange = .55f, float yChange = .55f, bool orientUp = false, int startOffset = 0, float xOffset = 0, float yOffset = 0, float zOffset = 0) {
         for (int x = 0, listPos = startOffset; x < n + 1; x++) {
             for (int y = 0; y < n + 1; y++, listPos++) {
-                newVertices[listPos] = new Vector3(x * xChange, y * yChange * (orientUp ? 1 : 0), y * yChange * (orientUp ? 0 : 1));
+                newVertices[listPos] = new Vector3(xOffset + x * xChange, yOffset + y * yChange * (orientUp ? 1 : 0), zOffset + y * yChange * (orientUp ? 0 : 1));
             }
         }
     }
