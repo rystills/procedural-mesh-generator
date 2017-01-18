@@ -54,8 +54,8 @@ public class GenerateMesh : MonoBehaviour {
         else if (mode == "wavy") {
             buildVertsWavy(n);
         }
-        buildTris(m,n);
-        buildUVs(n / 2);
+        buildTris(n,m);
+        buildUVs(Mathf.Max(m,n));
         finalizeMesh();
     }
 
@@ -105,13 +105,13 @@ public class GenerateMesh : MonoBehaviour {
 
     //break quads down into trianges (n = number of quads) 
     void buildTris(int m, int n, int startOffset = 0,bool flipNormals = false) {
-        for (int x = 0, listPos = startOffset; x < (m); x += 1) {
-            for (int y = 0; y < (n); y += 1, listPos += 6) {
-                int offsetX = x, offsetY = 4 * (int)(startOffset / (6 * n * n)) + y;
-                newTrianglePoints[listPos + (flipNormals ? 5 : 0)] = ((n + 1) * offsetX) + (offsetY);
+        for (int x = 0, listPos = startOffset; x < m; x++) {
+            for (int y = 0; y < (n); y++, listPos += 6) {
+                int offsetX = x, offsetY = 4 * (int)(startOffset / (6 * m * n)) + y;
+                newTrianglePoints[listPos + (flipNormals ? 5 : 0)] = ((m + 1) * offsetX) + (offsetY);
                 newTrianglePoints[listPos + 4] = newTrianglePoints[listPos + 1] = ((m + 1) * offsetX) + (offsetY + 1);
                 newTrianglePoints[listPos + 3] = newTrianglePoints[listPos + 2] = ((m + 1) * offsetX) + (offsetY + (n + 1));
-                newTrianglePoints[listPos + (flipNormals ? 0 : 5)] = ((n + 1) * offsetX) + (offsetY + (n + 2));
+                newTrianglePoints[listPos + (flipNormals ? 0 : 5)] = ((m + 1) * offsetX) + (offsetY + (n + 2));
             }
         }
     }
