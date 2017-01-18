@@ -17,56 +17,59 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.SetPixel(1, 1, Color.yellow);
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
-        generatePipe("normal",1);
+        //generatePipe("normal",1);
+        generateMesh("normal", 2,1);
 	}
 
     //construct an extruded, closed surface, with shape depending on input mode (n = number of pieces to split the pipe into)
     void generatePipe(string mode, int n) {
-        initNewMesh(n, 4);
+        initNewMesh(n,n, 4);
 
-        buildVerts(n, 1, .1f, false);
-        buildTris(n,0,true);
+        buildVerts(n,n, 1, .1f, false);
+        buildTris(n,n,0,true);
         buildUVs(n, false, newUVs.Length / 2, 0);
 
-        buildVerts(n, 1, .1f, true, (n + 1) * (n + 1),0,0,.1f);
-        buildTris(n, 6 * n * n,true);
+        buildVerts(n,n, 1, .1f, true, (n + 1) * (n + 1),0,0,.1f);
+        buildTris(n,n, 6 * n * n,true);
         buildUVs(n, true, newUVs.Length / 4, (n + 1) * (n + 1));
 
-        buildVerts(n, 1, .1f, true, 2 * ((n + 1) * (n + 1)));
-        buildTris(n, 2 * (6 * n * n));
+        buildVerts(n,n, 1, .1f, true, 2 * ((n + 1) * (n + 1)));
+        buildTris(n,n, 2 * (6 * n * n));
         buildUVs(n, true, newUVs.Length / 4, 2 * ((n + 1) * (n + 1)));
 
-        buildVerts(n, 1, .1f, false, 3 * ((n + 1) * (n + 1)), 0, .1f, 0);
-        buildTris(n, 3 * (6 * n * n));
+        buildVerts(n,n, 1, .1f, false, 3 * ((n + 1) * (n + 1)), 0, .1f, 0);
+        buildTris(n,n, 3 * (6 * n * n));
         buildUVs(n, false, newUVs.Length / 4, 3 * ((n + 1) * (n + 1)));
 
         finalizeMesh();
     }
 
-    // construct a flat nxn rectangular mesh (n = number of pieces to split the mesh into)
-    void generateMesh(string mode, int n) {
-        initNewMesh(n);
+    // construct a flat mxn rectangular mesh (n = number of pieces to split the mesh into)
+    void generateMesh(string mode, int m, int n = 0) {
+        n = (n == 0 ? m : n);
+        initNewMesh(m,n);
         if (mode == "normal") {
-            buildVerts(n);
+            buildVerts(m,n);
         }
         else if (mode == "wavy") {
             buildVertsWavy(n);
         }
-        buildTris(n);
+        buildTris(m,n);
         buildUVs(n / 2);
         finalizeMesh();
     }
 
     //initialize a new procedural mesh (n = number of quads)
-    void initNewMesh(int n, int factor = 1) {
-        newVertices = new Vector3[factor * ((n + 1) * (n + 1))]; //one square mesh has 4 vertices, and each subsequent triange adds one new vert (therefore two per additional quad)
-        newTrianglePoints = new int[factor * (6 * n * n)]; //n^2 total quads. each quad is 2 tris. multiply by 3 as each tri is described by 3 points
+    void initNewMesh(int m,int n=0, int factor = 1) {
+        n = (n == 0 ? m : n);
+        newVertices = new Vector3[factor * ((n + 1) * (m + 1))]; //one square mesh has 4 vertices, and each subsequent triange adds one new vert (therefore two per additional quad)
+        newTrianglePoints = new int[factor * (6 * n * m)]; //n^2 total quads. each quad is 2 tris. multiply by 3 as each tri is described by 3 points
         newUVs = new Vector2[newVertices.Length]; //number of UVs should match number of vertices for proper mapping
     }
 
     //construct vertices (n = number of quads)
-    void buildVerts(int n, float xChange = .55f, float yChange = .55f, bool orientUp = false, int startOffset = 0, float xOffset = 0, float yOffset = 0, float zOffset = 0) {
-        for (int x = 0, listPos = startOffset; x < n + 1; x++) {
+    void buildVerts(int m, int n, float xChange = .55f, float yChange = .55f, bool orientUp = false, int startOffset = 0, float xOffset = 0, float yOffset = 0, float zOffset = 0) {
+        for (int x = 0, listPos = startOffset; x < m + 1; x++) {
             for (int y = 0; y < n + 1; y++, listPos++) {
                 newVertices[listPos] = new Vector3(xOffset + x * xChange, yOffset + y * yChange * (orientUp ? 1 : 0), zOffset + y * yChange * (orientUp ? 0 : 1));
             }
@@ -101,13 +104,13 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //break quads down into trianges (n = number of quads) 
-    void buildTris(int n, int startOffset = 0,bool flipNormals = false) {
-        for (int x = 0, listPos = startOffset; x < (n); x += 1) {
+    void buildTris(int m, int n, int startOffset = 0,bool flipNormals = false) {
+        for (int x = 0, listPos = startOffset; x < (m); x += 1) {
             for (int y = 0; y < (n); y += 1, listPos += 6) {
                 int offsetX = x, offsetY = 4 * (int)(startOffset / (6 * n * n)) + y;
                 newTrianglePoints[listPos + (flipNormals ? 5 : 0)] = ((n + 1) * offsetX) + (offsetY);
-                newTrianglePoints[listPos + 4] = newTrianglePoints[listPos + 1] = ((n + 1) * offsetX) + (offsetY + 1);
-                newTrianglePoints[listPos + 3] = newTrianglePoints[listPos + 2] = ((n + 1) * offsetX) + (offsetY + (n + 1));
+                newTrianglePoints[listPos + 4] = newTrianglePoints[listPos + 1] = ((m + 1) * offsetX) + (offsetY + 1);
+                newTrianglePoints[listPos + 3] = newTrianglePoints[listPos + 2] = ((m + 1) * offsetX) + (offsetY + (n + 1));
                 newTrianglePoints[listPos + (flipNormals ? 0 : 5)] = ((n + 1) * offsetX) + (offsetY + (n + 2));
             }
         }
