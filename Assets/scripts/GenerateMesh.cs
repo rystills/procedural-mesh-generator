@@ -1,11 +1,12 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class GenerateMesh : MonoBehaviour {
 	public Material material;
-    Vector3[] newVertices;
-    int[] newTrianglePoints;
-    Vector2[] newUVs;
+    List<Vector3> newVertices;
+    List<int> newTrianglePoints;
+    List<Vector2> newUVs;
     Texture2D debugTex;
 
 
@@ -18,7 +19,7 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
         //generatePipe("normal",1);
-        generateMesh("normal", 2,1);
+        generateMesh("normal", 2,2);
 	}
 
     //construct an extruded, closed surface, with shape depending on input mode (n = number of pieces to split the pipe into)
