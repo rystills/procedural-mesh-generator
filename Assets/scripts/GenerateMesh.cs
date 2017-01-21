@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 public class GenerateMesh : MonoBehaviour {
     public Material material;
@@ -25,20 +26,24 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.SetPixel(1, 1, Color.yellow);
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
-        generateMesh("normal", 2,2);
+        generateMesh("normal", 3,5);
     }
 
-    // construct a flat mxn rectangular mesh (m = length segs, n = width segs)
+    // construct a flat mxn rectangular mesh (m = x segments, n = y segments)
     void generateMesh(string mode, int m, int n = 0) {
+        //give n a default value of m if it is not specified
         n = (n == 0 ? m : n);
-        //initNewMesh(m,n);
         if (mode == "normal") {
-            float xPos = 0;
             float quadSize = 1;
+            float xPos = 0;
+            string[] axes = new string[2];
+            axes[0] = "x"; axes[1] = "y";
+            //outer loop: iterate over the x axis
             for (int i = 0; i < m; ++i) {
                 float yPos = 0;
-                for (int r = 0; r < n; ++r) {
-                    propogateQuad(xPos, yPos, r == 0 ? "x" : "y", r == 1 ? "x" : "y", quadSize);
+                //inner loop: create quads while iterating over the y axis
+                for (int j = 0; j < n; ++j) {
+                    propogateQuad(xPos, yPos, 0, axes, quadSize);
                     yPos += quadSize;
                 }
                 xPos += quadSize;
@@ -47,30 +52,33 @@ public class GenerateMesh : MonoBehaviour {
         finalizeMesh();
     }
 
-    void propogateQuad(float xPos, float yPos, string dir, string prevDir, float quadSize) {
-        //step 1: generate the necessary verts and corresponding UVs
-        //there are no verts currently, so generate our first 2 side verts
-        if (newVertices.Count == 0) {
-            addVert(xPos, yPos, 0);
-            addVert(xPos + (dir == "x" ? 0 : quadSize), yPos + (dir == "y" ? 0 : quadSize), 0);            
-        }
-        //we now have our 2 side verts; add two more side verts
-        addVert(xPos + (dir != "x" ? 0 : quadSize), yPos + (dir != "y" ? 0 : quadSize), 0);
-        addVert(xPos + quadSize, yPos + quadSize, 0);
+    //create an additional quad from xPos,yPos of size quadSize going in direction dir ('x', 'y', or 'z' for now)
+    void propogateQuad(float xPos, float yPos, float zPos, string[] axes, float quadSize) {
+        //step 1: generate the necessary verts, and corresponding UVs
+        //generate 2 verts for first side
+        addVert(xPos, yPos, zPos);
+        addVert(xPos, yPos + (axes.Contains("y") ? quadSize : 0), zPos + (axes.Contains("z") ? quadSize : 0));            
+        //generate 2 verts for second sdie
+        addVert(xPos + (axes.Contains("x") ? quadSize : 0), yPos, zPos);
+        addVert(xPos + (axes.Contains("x") ? quadSize : 0), yPos + (axes.Contains("y") ? quadSize : 0), +(axes.Contains("z") ? quadSize : 0));
 
         //step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
-        int topLeftIndex = vertIndices[new Vector3(xPos + quadSize, yPos + quadSize, 0)];
-        int botLeftIndex = vertIndices[new Vector3(xPos + quadSize, yPos, 0)];
-        int topRightIndex = vertIndices[new Vector3(xPos, yPos + quadSize, 0)];
-        int botRightIndex = vertIndices[new Vector3(xPos,yPos, 0)];
+        int topLeftIndex = vertIndices[new Vector3(xPos + quadSize, yPos + quadSize, zPos)];
+        int botLeftIndex = vertIndices[new Vector3(xPos + quadSize, yPos, zPos)];
+        int topRightIndex = vertIndices[new Vector3(xPos, yPos + quadSize, zPos)];
+        int botRightIndex = vertIndices[new Vector3(xPos,yPos, zPos)];
         //first new tri
         addTri(botRightIndex, topRightIndex, botLeftIndex);
         //second new tri
         addTri(topRightIndex, topLeftIndex, botLeftIndex);
     }
 
-    //add a new vert with corresponding UVs, and add this vert's position in newVertices to vertIndices
+    //add a new vert with corresponding UVs if xPos,yPos does not already contain one, and add this vert's position in newVertices to vertIndices
     void addVert(float xPos, float yPos, float zPos) {
+        //make sure there is not already a vertex at xPos,yPos 
+        if (vertIndices.ContainsKey(new Vector3(xPos, yPos, zPos))) {
+            return;
+        }
         newVertices.Add(new Vector3(xPos, yPos, zPos));
         newUVs.Add(new Vector2(xPos, yPos));
         vertIndices[newVertices[newVertices.Count - 1]] = newVertices.Count - 1;
