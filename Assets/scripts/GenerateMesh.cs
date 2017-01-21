@@ -24,7 +24,7 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
         //generatePipe("normal",1);
-        generateMesh("normal", 2,2);
+        generateMesh("normal", 1,3);
 	}
 
     //construct an extruded, closed surface, with shape depending on input mode (n = number of pieces to split the pipe into)
@@ -60,7 +60,7 @@ public class GenerateMesh : MonoBehaviour {
             for (int i = 0; i < m; ++i) {
                 float yPos = 0;
                 for (int r = 0; r < n; ++r) {
-                    propogateQuad(xPos,yPos, r == 0 ? "y" : "x", quadSize);
+                    propogateQuad(xPos,yPos, r == 0 ? "x" : "y", r == 1 ? "x" : "y", quadSize);
                     yPos += quadSize;
                 }
                 xPos += quadSize;
@@ -74,7 +74,7 @@ public class GenerateMesh : MonoBehaviour {
         finalizeMesh();
     }
 
-    void propogateQuad(float xPos, float yPos, string dir, float quadSize) {
+    void propogateQuad(float xPos, float yPos, string dir, string prevDir, float quadSize) {
         //step 1: generate the necessary verts and corresponding UVs
         //case 1: there are no verts currently, so generate our first 2 side verts
         if (newVertices.Count == 0) {
@@ -90,14 +90,20 @@ public class GenerateMesh : MonoBehaviour {
         newUVs.Add(new Vector2(xPos + quadSize, yPos + quadSize));
 
         //step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
+        int botRightIndex = newVertices.Count-4, topRightIndex = newVertices.Count - 2, botLeftIndex = newVertices.Count - 3, topLeftIndex = newVertices.Count - 1;
+        if (dir == "y") {
+            topRightIndex = newVertices.Count - 3;
+            botLeftIndex = newVertices.Count - 2;
+            botRightIndex = newVertices.Count - (prevDir == "x" ? 5 : 4);
+        }
         //first new tri
-        newTrianglePoints.Add(newVertices.Count - 4);
-        newTrianglePoints.Add(newVertices.Count - 3);
-        newTrianglePoints.Add(newVertices.Count - 2);
+        newTrianglePoints.Add(botRightIndex);
+        newTrianglePoints.Add(topRightIndex);
+        newTrianglePoints.Add(botLeftIndex);
         //second new tri
-        newTrianglePoints.Add(newVertices.Count - 3);
-        newTrianglePoints.Add(newVertices.Count - 1);
-        newTrianglePoints.Add(newVertices.Count - 2);
+        newTrianglePoints.Add(topRightIndex);
+        newTrianglePoints.Add(topLeftIndex);
+        newTrianglePoints.Add(botLeftIndex);
     }
 
     //initialize a new procedural mesh (n = number of quads)
