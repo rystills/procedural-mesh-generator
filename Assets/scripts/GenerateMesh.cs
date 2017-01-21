@@ -7,6 +7,7 @@ public class GenerateMesh : MonoBehaviour {
     List<Vector3> newVertices;
     List<int> newTrianglePoints;
     List<Vector2> newUVs;
+    Dictionary<Vector3, int> vertIndices;
     Texture2D debugTex;
 
 
@@ -15,6 +16,7 @@ public class GenerateMesh : MonoBehaviour {
         newVertices = new List<Vector3>();
         newTrianglePoints = new List<int>();
         newUVs = new List<Vector2>();
+        vertIndices = new Dictionary<Vector3, int>();
         //build debug texture as a fallback if no material is supplied
         debugTex = new Texture2D(2, 2, TextureFormat.ARGB32, false);
         debugTex.SetPixel(0, 0, Color.red);
@@ -47,30 +49,31 @@ public class GenerateMesh : MonoBehaviour {
 
     void propogateQuad(float xPos, float yPos, string dir, string prevDir, float quadSize) {
         //step 1: generate the necessary verts and corresponding UVs
-        //case 1: there are no verts currently, so generate our first 2 side verts
+        //there are no verts currently, so generate our first 2 side verts
         if (newVertices.Count == 0) {
-            newVertices.Add(new Vector3(xPos, yPos, 0));
-            newUVs.Add(new Vector2(xPos, yPos));
-            newVertices.Add(new Vector3(xPos + (dir == "x" ? 0 : quadSize), yPos + (dir == "y" ? 0 : quadSize), 0));
-            newUVs.Add(new Vector2(xPos + (dir == "x" ? 0 : quadSize), yPos + (dir == "y" ? 0 : quadSize)));
+            addVert(xPos, yPos, 0);
+            addVert(xPos + (dir == "x" ? 0 : quadSize), yPos + (dir == "y" ? 0 : quadSize), 0);            
         }
-        //case 2: we have our 2 side verts; add two more side verts and generate our tris and UVs to match
-        newVertices.Add(new Vector3(xPos + (dir != "x" ? 0 : quadSize), yPos + (dir != "y" ? 0 : quadSize), 0));
-        newUVs.Add(new Vector2(xPos + (dir != "x" ? 0 : quadSize), yPos + (dir != "y" ? 0 : quadSize)));
-        newVertices.Add(new Vector3(xPos + quadSize, yPos + quadSize, 0));
-        newUVs.Add(new Vector2(xPos + quadSize, yPos + quadSize));
+        //we now have our 2 side verts; add two more side verts
+        addVert(xPos + (dir != "x" ? 0 : quadSize), yPos + (dir != "y" ? 0 : quadSize), 0);
+        addVert(xPos + quadSize, yPos + quadSize, 0);
 
         //step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
-        int botRightIndex = newVertices.Count - 4, topRightIndex = newVertices.Count - 2, botLeftIndex = newVertices.Count - 3, topLeftIndex = newVertices.Count - 1;
-        if (dir == "y") {
-            topRightIndex = newVertices.Count - 3;
-            botLeftIndex = newVertices.Count - 2;
-            botRightIndex = newVertices.Count - (prevDir == "x" ? 5 : 4);
-        }
+        int topLeftIndex = vertIndices[new Vector3(xPos + quadSize, yPos + quadSize, 0)];
+        int botLeftIndex = vertIndices[new Vector3(xPos + quadSize, yPos, 0)];
+        int topRightIndex = vertIndices[new Vector3(xPos, yPos + quadSize, 0)];
+        int botRightIndex = vertIndices[new Vector3(xPos,yPos, 0)];
         //first new tri
         addTri(botRightIndex, topRightIndex, botLeftIndex);
         //second new tri
         addTri(topRightIndex, topLeftIndex, botLeftIndex);
+    }
+
+    //add a new vert with corresponding UVs, and add this vert's position in newVertices to vertIndices
+    void addVert(float xPos, float yPos, float zPos) {
+        newVertices.Add(new Vector3(xPos, yPos, zPos));
+        newUVs.Add(new Vector2(xPos, yPos));
+        vertIndices[newVertices[newVertices.Count - 1]] = newVertices.Count - 1;
     }
 
     //simple helper method to add 3 points to the newTrianglePoints list
