@@ -24,7 +24,7 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
         //generatePipe("normal",1);
-        generateMesh("normal", 1,1);
+        generateMesh("normal", 2,2);
 	}
 
     //construct an extruded, closed surface, with shape depending on input mode (n = number of pieces to split the pipe into)
@@ -60,10 +60,10 @@ public class GenerateMesh : MonoBehaviour {
             for (int i = 0; i < m; ++i) {
                 float yPos = 0;
                 for (int r = 0; r < n; ++r) {
-                    propogateQuad(xPos,yPos, quadSize);
+                    propogateQuad(xPos,yPos, r == 0 ? "y" : "x", quadSize);
                     yPos += quadSize;
                 }
-                xPos++;
+                xPos += quadSize;
             }
         }
         /*else if (mode == "wavy") {
@@ -74,18 +74,18 @@ public class GenerateMesh : MonoBehaviour {
         finalizeMesh();
     }
 
-    void propogateQuad(float xPos, float yPos, float quadSize) {
+    void propogateQuad(float xPos, float yPos, string dir, float quadSize) {
         //step 1: generate the necessary verts and corresponding UVs
         //case 1: there are no verts currently, so generate our first 2 side verts
         if (newVertices.Count == 0) {
             newVertices.Add(new Vector3(xPos, yPos, 0));
             newUVs.Add(new Vector2(xPos, yPos));
-            newVertices.Add(new Vector3(xPos, yPos + quadSize, 0));
-            newUVs.Add(new Vector2(xPos, yPos + quadSize));
+            newVertices.Add(new Vector3(xPos + (dir == "x" ? 0 : quadSize), yPos + (dir == "y" ? 0 : quadSize), 0));
+            newUVs.Add(new Vector2(xPos + (dir == "x" ? 0 : quadSize), yPos + (dir == "y" ? 0 : quadSize)));
         }
         //case 2: we have our 2 side verts; add two more side verts and generate our tris and UVs to match
-        newVertices.Add(new Vector3(xPos + quadSize, yPos, 0));
-        newUVs.Add(new Vector2(xPos + quadSize, yPos));
+        newVertices.Add(new Vector3(xPos + (dir != "x" ? 0 : quadSize), yPos + (dir != "y" ? 0 : quadSize), 0));
+        newUVs.Add(new Vector2(xPos + (dir != "x" ? 0 : quadSize), yPos + (dir != "y" ? 0 : quadSize)));
         newVertices.Add(new Vector3(xPos + quadSize, yPos + quadSize, 0));
         newUVs.Add(new Vector2(xPos + quadSize, yPos + quadSize));
 
