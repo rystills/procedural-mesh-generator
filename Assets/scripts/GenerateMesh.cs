@@ -27,7 +27,7 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
         //generateMesh("normal", 3,5);
-        generateBox(4, 3, 3);
+        generateBox(4, 5, 3);
     }
 
     //construct a closed box, with each side is mxn quads (m = x segments, n = y segmenet); adapted from generateMesh
@@ -59,10 +59,66 @@ public class GenerateMesh : MonoBehaviour {
             float yPos = 0;
             //inner loop: create quads while iterating over the y axis
             for (int j = 0; j < n; ++j) {
-                propogateQuad(xPos, yPos, quadSize, axes, quadSize, true);
+                propogateQuad(xPos, yPos, quadSize * m, axes, quadSize, true);
                 yPos += quadSize;
             }
             xPos += quadSize;
+        }
+
+        //generate left
+        axes[0] = "z"; axes[1] = "y";
+        float zPos = 0;
+        //outer loop: iterate over the x axis
+        for (int i = 0; i < m; ++i) {
+            float yPos = 0;
+            //inner loop: create quads while iterating over the y axis
+            for (int j = 0; j < n; ++j) {
+                propogateQuad(0, yPos, zPos, axes, quadSize, true);
+                yPos += quadSize;
+            }
+            zPos += quadSize;
+        }
+
+        //generate right
+        axes[0] = "z"; axes[1] = "y";
+        zPos = 0;
+        //outer loop: iterate over the x axis
+        for (int i = 0; i < m; ++i) {
+            float yPos = 0;
+            //inner loop: create quads while iterating over the y axis
+            for (int j = 0; j < n; ++j) {
+                propogateQuad(quadSize * m, yPos, zPos, axes, quadSize, false);
+                yPos += quadSize;
+            }
+            zPos += quadSize;
+        }
+
+        //generate top
+        axes[0] = "z"; axes[1] = "x";
+        zPos = 0;
+        //outer loop: iterate over the x axis
+        for (int i = 0; i < m; ++i) {
+            xPos = 0;
+            //inner loop: create quads while iterating over the y axis
+            for (int j = 0; j < m; ++j) {
+                propogateQuad(xPos, 0, zPos, axes, quadSize, false);
+                xPos += quadSize;
+            }
+            zPos += quadSize;
+        }
+
+        //generate bottom
+        axes[0] = "z"; axes[1] = "x";
+        zPos = 0;
+        //outer loop: iterate over the x axis
+        for (int i = 0; i < m; ++i) {
+            xPos = 0;
+            //inner loop: create quads while iterating over the y axis
+            for (int j = 0; j < m; ++j) {
+                propogateQuad(xPos, quadSize * n, zPos, axes, quadSize, true);
+                xPos += quadSize;
+            }
+            zPos += quadSize;
         }
         finalizeMesh();
     }
@@ -94,16 +150,16 @@ public class GenerateMesh : MonoBehaviour {
     void propogateQuad(float xPos, float yPos, float zPos, string[] axes, float quadSize, bool flip = false) {
         //step 1: generate the necessary verts, and corresponding UVs
         //generate 2 verts for first side
-        addVert(xPos, yPos, zPos);
-        addVert(xPos + (axes[0] == "x" ? 0 : axes.Contains("x") ? quadSize : 0), yPos + (axes[0] == "y" ? 0 : axes.Contains("y") ? quadSize : 0), zPos + (axes[0] == "z" ? 0 : axes.Contains("z") ? quadSize : 0));            
+        addVert(xPos, yPos, zPos, axes);
+        addVert(xPos + (axes[0] == "x" ? 0 : axes.Contains("x") ? quadSize : 0), yPos + (axes[0] == "y" ? 0 : axes.Contains("y") ? quadSize : 0), zPos + (axes[0] == "z" ? 0 : axes.Contains("z") ? quadSize : 0), axes);            
         //generate 2 verts for second sdie
-        addVert(xPos + (axes[0] == "x" ? quadSize : 0), yPos + (axes[0] == "y" ? quadSize : 0), zPos + (axes[0] == "z" ? quadSize : 0));
-        addVert(xPos + (axes.Contains("x") ? quadSize : 0), yPos + (axes.Contains("y") ? quadSize : 0), zPos + (axes.Contains("z") ? quadSize : 0));
+        addVert(xPos + (axes[0] == "x" ? quadSize : 0), yPos + (axes[0] == "y" ? quadSize : 0), zPos + (axes[0] == "z" ? quadSize : 0), axes);
+        addVert(xPos + (axes.Contains("x") ? quadSize : 0), yPos + (axes.Contains("y") ? quadSize : 0), zPos + (axes.Contains("z") ? quadSize : 0), axes);
 
         //step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
-        int topLeftIndex = vertIndices[new Vector3(xPos + quadSize, yPos + quadSize, zPos)];
-        int botLeftIndex = vertIndices[new Vector3(xPos + quadSize, yPos, zPos)];
-        int topRightIndex = vertIndices[new Vector3(xPos, yPos + quadSize, zPos)];
+        int topLeftIndex = vertIndices[new Vector3(xPos + (axes.Contains("x") ? quadSize : 0), yPos + (axes.Contains("y") ? quadSize : 0), zPos + (axes.Contains("z") ? quadSize : 0))];
+        int botLeftIndex = vertIndices[new Vector3(xPos + (axes[0] == "x" ? quadSize : 0), yPos + (axes[0] == "y" ? quadSize : 0), zPos + (axes[0] == "z" ? quadSize : 0))];
+        int topRightIndex = vertIndices[new Vector3(xPos + (axes[0] == "x" ? 0 : axes.Contains("x") ? quadSize : 0), yPos + (axes[0] == "y" ? 0 : axes.Contains("y") ? quadSize : 0), zPos + (axes[0] == "z" ? 0 : axes.Contains("z") ? quadSize : 0))];
         int botRightIndex = vertIndices[new Vector3(xPos,yPos, zPos)];
         //first new tri
         addTri(botRightIndex, topRightIndex, botLeftIndex,flip);
@@ -112,13 +168,13 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //add a new vert with corresponding UVs if xPos,yPos does not already contain one, and add this vert's position in newVertices to vertIndices
-    void addVert(float xPos, float yPos, float zPos) {
+    void addVert(float xPos, float yPos, float zPos, string[] axes) {
         //make sure there is not already a vertex at xPos,yPos 
         if (vertIndices.ContainsKey(new Vector3(xPos, yPos, zPos))) {
             return;
         }
         newVertices.Add(new Vector3(xPos, yPos, zPos));
-        newUVs.Add(new Vector2(xPos, yPos));
+        newUVs.Add(new Vector2(axes[0] == "x" ? xPos : axes[0] == "y" ? yPos : zPos, axes[1] == "x" ? xPos : axes[1] == "y" ? yPos : zPos));
         vertIndices[newVertices[newVertices.Count - 1]] = newVertices.Count - 1;
     }
 
