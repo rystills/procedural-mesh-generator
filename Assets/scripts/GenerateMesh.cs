@@ -57,10 +57,10 @@ public class GenerateMesh : MonoBehaviour {
         //step 1: generate the necessary verts, and corresponding UVs
         //generate 2 verts for first side
         addVert(xPos, yPos, zPos);
-        addVert(xPos, yPos + (axes.Contains("y") ? quadSize : 0), zPos + (axes.Contains("z") ? quadSize : 0));            
+        addVert(xPos + (axes[0] == "x" ? 0 : axes.Contains("x") ? quadSize : 0), yPos + (axes[0] == "y" ? 0 : axes.Contains("y") ? quadSize : 0), zPos + (axes[0] == "z" ? 0 : axes.Contains("z") ? quadSize : 0));            
         //generate 2 verts for second sdie
-        addVert(xPos + (axes.Contains("x") ? quadSize : 0), yPos, zPos);
-        addVert(xPos + (axes.Contains("x") ? quadSize : 0), yPos + (axes.Contains("y") ? quadSize : 0), +(axes.Contains("z") ? quadSize : 0));
+        addVert(xPos + (axes[0] == "x" ? quadSize : 0), yPos + (axes[0] == "y" ? quadSize : 0), zPos + (axes[0] == "z" ? quadSize : 0));
+        addVert(xPos + (axes.Contains("x") ? quadSize : 0), yPos + (axes.Contains("y") ? quadSize : 0), zPos + (axes.Contains("z") ? quadSize : 0));
 
         //step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
         int topLeftIndex = vertIndices[new Vector3(xPos + quadSize, yPos + quadSize, zPos)];
