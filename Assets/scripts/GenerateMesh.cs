@@ -1,15 +1,24 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 public class GenerateMesh : MonoBehaviour {
-	public Material material;
-    Vector3[] newVertices;
-    int[] newTrianglePoints;
-    Vector2[] newUVs;
+    public Material material;
+    List<Vector3> newVertices;
+    List<int> newTrianglePoints;
+    List<Vector2> newUVs;
+    Dictionary<Vector3, int> vertIndices;
     Texture2D debugTex;
 
 
     void Start() {
+        //init mesh lists
+        newVertices = new List<Vector3>();
+        newTrianglePoints = new List<int>();
+        newUVs = new List<Vector2>();
+        vertIndices = new Dictionary<Vector3, int>();
+        //build debug texture as a fallback if no material is supplied
         debugTex = new Texture2D(2, 2, TextureFormat.ARGB32, false);
         debugTex.SetPixel(0, 0, Color.red);
         debugTex.SetPixel(1, 0, Color.green);
@@ -17,109 +26,107 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.SetPixel(1, 1, Color.yellow);
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
-        //generatePipe("normal",1);
-        generateMesh("normal", 2,1);
-	}
+        //generateMesh("normal", 3,5);
+        generateBox(4, 3, 3);
+    }
 
-    //construct an extruded, closed surface, with shape depending on input mode (n = number of pieces to split the pipe into)
-    void generatePipe(string mode, int n) {
-        initNewMesh(n,n, 4);
+    //construct a closed box, with each side is mxn quads (m = x segments, n = y segmenet); adapted from generateMesh
+    void generateBox(int numSides, int m, int n) {
+        //give n a default value of m if it is not specified
+        n = (n == 0 ? m : n);
+        float quadSize = 1;
+        string[] axes = new string[2];
 
-        buildVerts(n,n, 1, .1f, false);
-        buildTris(n,n,0,true);
-        buildUVs(n, false, newUVs.Length / 2, 0);
+        //generate front
+        axes[0] = "x"; axes[1] = "y";
+        float xPos = 0;
+        //outer loop: iterate over the x axis
+        for (int i = 0; i < m; ++i) {
+            float yPos = 0;
+            //inner loop: create quads while iterating over the y axis
+            for (int j = 0; j < n; ++j) {
+                propogateQuad(xPos, yPos, 0, axes, quadSize);
+                yPos += quadSize;
+            }
+            xPos += quadSize;
+        }
 
-        buildVerts(n,n, 1, .1f, true, (n + 1) * (n + 1),0,0,.1f);
-        buildTris(n,n, 6 * n * n,true);
-        buildUVs(n, true, newUVs.Length / 4, (n + 1) * (n + 1));
-
-        buildVerts(n,n, 1, .1f, true, 2 * ((n + 1) * (n + 1)));
-        buildTris(n,n, 2 * (6 * n * n));
-        buildUVs(n, true, newUVs.Length / 4, 2 * ((n + 1) * (n + 1)));
-
-        buildVerts(n,n, 1, .1f, false, 3 * ((n + 1) * (n + 1)), 0, .1f, 0);
-        buildTris(n,n, 3 * (6 * n * n));
-        buildUVs(n, false, newUVs.Length / 4, 3 * ((n + 1) * (n + 1)));
-
+        //generate back
+        axes[0] = "x"; axes[1] = "y";
+        xPos = 0;
+        //outer loop: iterate over the x axis
+        for (int i = 0; i < m; ++i) {
+            float yPos = 0;
+            //inner loop: create quads while iterating over the y axis
+            for (int j = 0; j < n; ++j) {
+                propogateQuad(xPos, yPos, quadSize, axes, quadSize, true);
+                yPos += quadSize;
+            }
+            xPos += quadSize;
+        }
         finalizeMesh();
     }
 
-    // construct a flat mxn rectangular mesh (n = number of pieces to split the mesh into)
+    // construct a flat mxn rectangular mesh (m = x segments, n = y segments)
     void generateMesh(string mode, int m, int n = 0) {
+        //give n a default value of m if it is not specified
         n = (n == 0 ? m : n);
-        initNewMesh(m,n);
         if (mode == "normal") {
-            buildVerts(m,n);
+            float quadSize = 1;
+            float xPos = 0;
+            string[] axes = new string[2];
+            axes[0] = "x"; axes[1] = "y";
+            //outer loop: iterate over the x axis
+            for (int i = 0; i < m; ++i) {
+                float yPos = 0;
+                //inner loop: create quads while iterating over the y axis
+                for (int j = 0; j < n; ++j) {
+                    propogateQuad(xPos, yPos, 0, axes, quadSize);
+                    yPos += quadSize;
+                }
+                xPos += quadSize;
+            }
         }
-        else if (mode == "wavy") {
-            buildVertsWavy(n);
-        }
-        buildTris(n,m);
-        buildUVs(Mathf.Max(m,n));
         finalizeMesh();
     }
 
-    //initialize a new procedural mesh (n = number of quads)
-    void initNewMesh(int m,int n=0, int factor = 1) {
-        n = (n == 0 ? m : n);
-        newVertices = new Vector3[factor * ((n + 1) * (m + 1))]; //one square mesh has 4 vertices, and each subsequent triange adds one new vert (therefore two per additional quad)
-        newTrianglePoints = new int[factor * (6 * n * m)]; //n^2 total quads. each quad is 2 tris. multiply by 3 as each tri is described by 3 points
-        newUVs = new Vector2[newVertices.Length]; //number of UVs should match number of vertices for proper mapping
+    //create an additional quad from xPos,yPos of size quadSize going in direction dir ('x', 'y', or 'z' for now)
+    void propogateQuad(float xPos, float yPos, float zPos, string[] axes, float quadSize, bool flip = false) {
+        //step 1: generate the necessary verts, and corresponding UVs
+        //generate 2 verts for first side
+        addVert(xPos, yPos, zPos);
+        addVert(xPos + (axes[0] == "x" ? 0 : axes.Contains("x") ? quadSize : 0), yPos + (axes[0] == "y" ? 0 : axes.Contains("y") ? quadSize : 0), zPos + (axes[0] == "z" ? 0 : axes.Contains("z") ? quadSize : 0));            
+        //generate 2 verts for second sdie
+        addVert(xPos + (axes[0] == "x" ? quadSize : 0), yPos + (axes[0] == "y" ? quadSize : 0), zPos + (axes[0] == "z" ? quadSize : 0));
+        addVert(xPos + (axes.Contains("x") ? quadSize : 0), yPos + (axes.Contains("y") ? quadSize : 0), zPos + (axes.Contains("z") ? quadSize : 0));
+
+        //step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
+        int topLeftIndex = vertIndices[new Vector3(xPos + quadSize, yPos + quadSize, zPos)];
+        int botLeftIndex = vertIndices[new Vector3(xPos + quadSize, yPos, zPos)];
+        int topRightIndex = vertIndices[new Vector3(xPos, yPos + quadSize, zPos)];
+        int botRightIndex = vertIndices[new Vector3(xPos,yPos, zPos)];
+        //first new tri
+        addTri(botRightIndex, topRightIndex, botLeftIndex,flip);
+        //second new tri
+        addTri(topRightIndex, topLeftIndex, botLeftIndex, flip);
     }
 
-    //construct vertices (n = number of quads)
-    void buildVerts(int m, int n, float xChange = .55f, float yChange = .55f, bool orientUp = false, int startOffset = 0, float xOffset = 0, float yOffset = 0, float zOffset = 0) {
-        for (int x = 0, listPos = startOffset; x < m + 1; x++) {
-            for (int y = 0; y < n + 1; y++, listPos++) {
-                newVertices[listPos] = new Vector3(xOffset + x * xChange, yOffset + y * yChange * (orientUp ? 1 : 0), zOffset + y * yChange * (orientUp ? 0 : 1));
-            }
+    //add a new vert with corresponding UVs if xPos,yPos does not already contain one, and add this vert's position in newVertices to vertIndices
+    void addVert(float xPos, float yPos, float zPos) {
+        //make sure there is not already a vertex at xPos,yPos 
+        if (vertIndices.ContainsKey(new Vector3(xPos, yPos, zPos))) {
+            return;
         }
+        newVertices.Add(new Vector3(xPos, yPos, zPos));
+        newUVs.Add(new Vector2(xPos, yPos));
+        vertIndices[newVertices[newVertices.Count - 1]] = newVertices.Count - 1;
     }
 
-    //construct vertices with a random wave on the y axis (n = number of quads)
-    void buildVertsWavy(int n) {
-        float averageLocalY = 0f;
-        for (int x = 0, listPos = 0; x < n + 1; x++) {
-            for (int y = 0; y < n + 1; y++, listPos++) {
-                if (x == 0 && y == 0) { //first vertex so the average local y is the model's local y
-                    averageLocalY = 0;
-                }
-                else if (x == 0) {
-                    averageLocalY = newVertices[listPos - 1].y; //in the first row so only have to check vertex behind you
-                }
-                else {
-                    if (y == 0) { //in the first column but not first row so must check below you and below - infront of you
-                        averageLocalY = (newVertices[listPos - (n + 1)].y + newVertices[listPos - (n + 1) + 1].y) / 2;
-                    }
-                    else if (y == n + 1) { //in the last column but not first row so must check behind you, below behind you, and below you
-                        averageLocalY = (newVertices[listPos - 1].y + newVertices[listPos - (n + 1) - 1].y + newVertices[listPos - (n + 1)].y) / 3;
-                    }
-                    else { //somewhere not on the outside. must check behind, below-behind, below, below-infront
-                        averageLocalY = (newVertices[listPos - 1].y + newVertices[listPos - (n + 1) - 1].y + newVertices[listPos - (n + 1)].y + newVertices[listPos - (n + 1) + 1].y) / 4;
-                    }
-                }
-                newVertices[listPos] = new Vector3(x * .55f, averageLocalY + (Random.Range(-0.4f, 0.4f)), y * .55f);
-            }
-        }
-    }
-
-    //break quads down into trianges (n = number of quads) 
-    void buildTris(int m, int n, int startOffset = 0,bool flipNormals = false) {
-        for (int x = 0, listPos = startOffset; x < m; x++) {
-            for (int y = 0; y < (n); y++, listPos += 6) {
-                int offsetX = x, offsetY = 4 * (int)(startOffset / (6 * m * n)) + y;
-                newTrianglePoints[listPos + (flipNormals ? 5 : 0)] = ((m + 1) * offsetX) + (offsetY);
-                newTrianglePoints[listPos + 4] = newTrianglePoints[listPos + 1] = ((m + 1) * offsetX) + (offsetY + 1);
-                newTrianglePoints[listPos + 3] = newTrianglePoints[listPos + 2] = ((m + 1) * offsetX) + (offsetY + (n + 1));
-                newTrianglePoints[listPos + (flipNormals ? 0 : 5)] = ((m + 1) * offsetX) + (offsetY + (n + 2));
-            }
-        }
-    }
-
-    //construct UVs, repeating based on some scale factor (for a flat UVW unwrap with a straight-up orientation, we can just map to x,z coords)
-    void buildUVs(float factor, bool orientUp = false, int n = 0, int startOffset = 0) {
-        n = (n == 0 ? newUVs.Length : n);
-        for (int i = startOffset; i < startOffset + n; newUVs[i] = new Vector2(newVertices[i].x / factor, (orientUp ? newVertices[i].y : newVertices[i].z) / factor), i++) ;
+    //simple helper method to add 3 points to the newTrianglePoints list
+    void addTri(int index1, int index2, int index3,bool flip = false) {
+        newTrianglePoints.Add(flip? index3 : index1);
+        newTrianglePoints.Add(index2);
+        newTrianglePoints.Add(flip ? index1 : index3);
     }
 
     //construct the new mesh, and attach the appropriate components
@@ -127,9 +134,9 @@ public class GenerateMesh : MonoBehaviour {
         Mesh mesh = new Mesh();
         MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
         meshFilter.mesh = mesh;
-        mesh.vertices = newVertices;
-        mesh.triangles = newTrianglePoints;
-        mesh.uv = newUVs;
+        mesh.vertices = newVertices.ToArray();
+        mesh.triangles = newTrianglePoints.ToArray();
+        mesh.uv = newUVs.ToArray();
         meshFilter.mesh.RecalculateBounds();
         meshFilter.mesh.RecalculateNormals();
         MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
