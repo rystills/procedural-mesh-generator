@@ -26,7 +26,45 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.SetPixel(1, 1, Color.yellow);
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
-        generateMesh("normal", 3,5);
+        //generateMesh("normal", 3,5);
+        generateBox(4, 3, 3);
+    }
+
+    //construct a closed box, with each side is mxn quads (m = x segments, n = y segmenet); adapted from generateMesh
+    void generateBox(int numSides, int m, int n) {
+        //give n a default value of m if it is not specified
+        n = (n == 0 ? m : n);
+        float quadSize = 1;
+        string[] axes = new string[2];
+
+        //generate front
+        axes[0] = "x"; axes[1] = "y";
+        float xPos = 0;
+        //outer loop: iterate over the x axis
+        for (int i = 0; i < m; ++i) {
+            float yPos = 0;
+            //inner loop: create quads while iterating over the y axis
+            for (int j = 0; j < n; ++j) {
+                propogateQuad(xPos, yPos, 0, axes, quadSize);
+                yPos += quadSize;
+            }
+            xPos += quadSize;
+        }
+
+        //generate back
+        axes[0] = "x"; axes[1] = "y";
+        xPos = 0;
+        //outer loop: iterate over the x axis
+        for (int i = 0; i < m; ++i) {
+            float yPos = 0;
+            //inner loop: create quads while iterating over the y axis
+            for (int j = 0; j < n; ++j) {
+                propogateQuad(xPos, yPos, quadSize, axes, quadSize, true);
+                yPos += quadSize;
+            }
+            xPos += quadSize;
+        }
+        finalizeMesh();
     }
 
     // construct a flat mxn rectangular mesh (m = x segments, n = y segments)
@@ -53,7 +91,7 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //create an additional quad from xPos,yPos of size quadSize going in direction dir ('x', 'y', or 'z' for now)
-    void propogateQuad(float xPos, float yPos, float zPos, string[] axes, float quadSize) {
+    void propogateQuad(float xPos, float yPos, float zPos, string[] axes, float quadSize, bool flip = false) {
         //step 1: generate the necessary verts, and corresponding UVs
         //generate 2 verts for first side
         addVert(xPos, yPos, zPos);
@@ -68,9 +106,9 @@ public class GenerateMesh : MonoBehaviour {
         int topRightIndex = vertIndices[new Vector3(xPos, yPos + quadSize, zPos)];
         int botRightIndex = vertIndices[new Vector3(xPos,yPos, zPos)];
         //first new tri
-        addTri(botRightIndex, topRightIndex, botLeftIndex);
+        addTri(botRightIndex, topRightIndex, botLeftIndex,flip);
         //second new tri
-        addTri(topRightIndex, topLeftIndex, botLeftIndex);
+        addTri(topRightIndex, topLeftIndex, botLeftIndex, flip);
     }
 
     //add a new vert with corresponding UVs if xPos,yPos does not already contain one, and add this vert's position in newVertices to vertIndices
@@ -85,10 +123,10 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //simple helper method to add 3 points to the newTrianglePoints list
-    void addTri(int index1, int index2, int index3) {
-        newTrianglePoints.Add(index1);
+    void addTri(int index1, int index2, int index3,bool flip = false) {
+        newTrianglePoints.Add(flip? index3 : index1);
         newTrianglePoints.Add(index2);
-        newTrianglePoints.Add(index3);
+        newTrianglePoints.Add(flip ? index1 : index3);
     }
 
     //construct the new mesh, and attach the appropriate components
