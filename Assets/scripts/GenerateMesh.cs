@@ -27,7 +27,7 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
         //generateMesh("normal", 3,5);
-        generateBox(4, 5, 3);
+        generateBox(6, 4, 6);
     }
 
     //construct a closed box, with each side is mxn quads (m = x segments, n = y segmenet); adapted from generateMesh
@@ -35,90 +35,26 @@ public class GenerateMesh : MonoBehaviour {
         //give n a default value of m if it is not specified
         n = (n == 0 ? m : n);
         float quadSize = 1;
-        string[] axes = new string[2];
+        string[] allAxes = { "x", "y", "z" };
 
-        //generate front
-        axes[0] = "x"; axes[1] = "y";
-        float xPos = 0;
-        //outer loop: iterate over the x axis
-        for (int i = 0; i < m; ++i) {
-            float yPos = 0;
-            //inner loop: create quads while iterating over the y axis
-            for (int j = 0; j < n; ++j) {
-                propogateQuad(xPos, yPos, 0, axes, quadSize);
-                yPos += quadSize;
+        //generate sides in groups of 2; front and back, then left and right, then finally top and bottom
+        for (int k = 0; k < 3; ++k) {
+            string[] axes = {allAxes[k], allAxes[(k + 1) % allAxes.Length]};
+            for (int l = 0; l  <2; ++l) {
+                float pos1 = 0;
+                float pos3 = (l == 0 ? 0 : quadSize * (k == 2 ? n: m));
+                bool shouldFlip = l != 0;
+                //outer loop: iterate over the x axis
+                for (int i = 0; i < m; ++i) {
+                    float pos2 = 0;
+                    //inner loop: create quads while iterating over the y axis
+                    for (int j = 0; j < n; ++j) {
+                        propogateQuad(axes[0] == "x" ? pos1 : axes[1] == "x" ? pos2 : pos3, axes[0] == "y" ? pos1 : axes[1] == "y" ? pos2 : pos3, axes[0] == "z" ? pos1 : axes[1] == "z" ? pos2 : pos3,  axes, quadSize, shouldFlip);
+                        pos2 += quadSize;
+                    }
+                    pos1 += quadSize;
+                }
             }
-            xPos += quadSize;
-        }
-
-        //generate back
-        axes[0] = "x"; axes[1] = "y";
-        xPos = 0;
-        //outer loop: iterate over the x axis
-        for (int i = 0; i < m; ++i) {
-            float yPos = 0;
-            //inner loop: create quads while iterating over the y axis
-            for (int j = 0; j < n; ++j) {
-                propogateQuad(xPos, yPos, quadSize * m, axes, quadSize, true);
-                yPos += quadSize;
-            }
-            xPos += quadSize;
-        }
-
-        //generate left
-        axes[0] = "z"; axes[1] = "y";
-        float zPos = 0;
-        //outer loop: iterate over the x axis
-        for (int i = 0; i < m; ++i) {
-            float yPos = 0;
-            //inner loop: create quads while iterating over the y axis
-            for (int j = 0; j < n; ++j) {
-                propogateQuad(0, yPos, zPos, axes, quadSize, true);
-                yPos += quadSize;
-            }
-            zPos += quadSize;
-        }
-
-        //generate right
-        axes[0] = "z"; axes[1] = "y";
-        zPos = 0;
-        //outer loop: iterate over the x axis
-        for (int i = 0; i < m; ++i) {
-            float yPos = 0;
-            //inner loop: create quads while iterating over the y axis
-            for (int j = 0; j < n; ++j) {
-                propogateQuad(quadSize * m, yPos, zPos, axes, quadSize, false);
-                yPos += quadSize;
-            }
-            zPos += quadSize;
-        }
-
-        //generate top
-        axes[0] = "z"; axes[1] = "x";
-        zPos = 0;
-        //outer loop: iterate over the x axis
-        for (int i = 0; i < m; ++i) {
-            xPos = 0;
-            //inner loop: create quads while iterating over the y axis
-            for (int j = 0; j < m; ++j) {
-                propogateQuad(xPos, 0, zPos, axes, quadSize, false);
-                xPos += quadSize;
-            }
-            zPos += quadSize;
-        }
-
-        //generate bottom
-        axes[0] = "z"; axes[1] = "x";
-        zPos = 0;
-        //outer loop: iterate over the x axis
-        for (int i = 0; i < m; ++i) {
-            xPos = 0;
-            //inner loop: create quads while iterating over the y axis
-            for (int j = 0; j < m; ++j) {
-                propogateQuad(xPos, quadSize * n, zPos, axes, quadSize, true);
-                xPos += quadSize;
-            }
-            zPos += quadSize;
         }
         finalizeMesh();
     }
