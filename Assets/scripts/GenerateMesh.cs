@@ -39,18 +39,18 @@ public class GenerateMesh : MonoBehaviour {
         for (int k = 0; k < 3; ++k) {
             string[] axes = { allAxes[k], allAxes[(k + 1) % allAxes.Length] };
             for (int l = 0; l < 2; ++l) {
-                float pos1 = 0;
+                float[] position = { 0, 0, 0 };
                 //if l is 0, generate first side (no offset); otherwise, generate opposte side (quadSize offset)
-                float pos3 = l == 0 ? 0 : allDims[(k+2)%allDims.Length] * quadSize;
-                //outer loop: iterate over the x axis
+                position[(k+2)%3] = l == 0 ? 0 : allDims[(k+2)%allDims.Length] * quadSize;
+                //outer loop: iterate over the primary axis
                 for (int i = 0; i < allDims[k]; ++i) {
-                    float pos2 = 0;
-                    //inner loop: create quads while iterating over the y axis
+                    position[(k + 1) % 3] = 0;
+                    //inner loop: create quads while iterating over the secondary axis
                     for (int j = 0; j < allDims[(k + 1) % allDims.Length]; ++j) {
-                        propogateQuad(axes[0] == "x" ? pos1 : axes[1] == "x" ? pos2 : pos3, axes[0] == "y" ? pos1 : axes[1] == "y" ? pos2 : pos3, axes[0] == "z" ? pos1 : axes[1] == "z" ? pos2 : pos3, axes, quadSize, l != 0);
-                        pos2 += quadSize;
+                        propogateQuad(position, axes, quadSize, l != 0);
+                        position[(k + 1) % 3] += quadSize;
                     }
-                    pos1 += quadSize;
+                    position[k] += quadSize;
                 }
             }
         }
@@ -80,7 +80,7 @@ public class GenerateMesh : MonoBehaviour {
         finalizeMesh();
     }
 
-    //create an additional quad from xPos,yPos of size quadSize going in direction dir ('x', 'y', or 'z' for now)
+    //create an additional quad from position[] of size quadSize going in direction dir ('x', 'y', or 'z' for now)
     void propogateQuad(float xPos, float yPos, float zPos, string[] axes, float quadSize, bool flip = false) {
         //step 1: generate the necessary verts, and corresponding UVs
         //generate 2 verts for first side
@@ -99,6 +99,10 @@ public class GenerateMesh : MonoBehaviour {
         addTri(botRightIndex, topRightIndex, botLeftIndex, flip);
         //second new tri
         addTri(topRightIndex, topLeftIndex, botLeftIndex, flip);
+    }
+
+    void propogateQuad(float[] positions, string[] axes, float quadSize, bool flip = false) {
+        propogateQuad(positions[0],positions[1],positions[2], axes, quadSize, flip);
     }
 
     //add a new vert with corresponding UVs if xPos,yPos does not already contain one, and add this vert's position in newVertices to vertIndices
