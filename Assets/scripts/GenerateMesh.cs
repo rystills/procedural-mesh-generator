@@ -27,13 +27,11 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
         //generateMesh("normal", 3,5);
-        generateBox(6, 4, 6);
+        generateBox(3, 5, 7);
     }
 
     //construct a closed box, with each side is mxn quads (m = x segments, n = y segmenet); adapted from generateMesh
-    void generateBox(int numSides, int m, int n) {
-        //give n a default value of m if it is not specified
-        n = (n == 0 ? m : n);
+    void generateBox(int length, int width, int height) {
         float quadSize = 1;
         string[] allAxes = { "x", "y", "z" };
 
@@ -42,13 +40,13 @@ public class GenerateMesh : MonoBehaviour {
             string[] axes = {allAxes[k], allAxes[(k + 1) % allAxes.Length]};
             for (int l = 0; l  <2; ++l) {
                 float pos1 = 0;
-                float pos3 = (l == 0 ? 0 : quadSize * (k == 2 ? n: m));
+                float pos3 = l==0? 0 : (k == 0 ? height : k == 1 ? length : width) * quadSize;
                 bool shouldFlip = l != 0;
                 //outer loop: iterate over the x axis
-                for (int i = 0; i < m; ++i) {
+                for (int i = 0; i < (k == 0 ? length : k == 1 ? width : height); ++i) {
                     float pos2 = 0;
                     //inner loop: create quads while iterating over the y axis
-                    for (int j = 0; j < n; ++j) {
+                    for (int j = 0; j < (k == 0 ? width : k == 1 ? height : length); ++j) {
                         propogateQuad(axes[0] == "x" ? pos1 : axes[1] == "x" ? pos2 : pos3, axes[0] == "y" ? pos1 : axes[1] == "y" ? pos2 : pos3, axes[0] == "z" ? pos1 : axes[1] == "z" ? pos2 : pos3,  axes, quadSize, shouldFlip);
                         pos2 += quadSize;
                     }
