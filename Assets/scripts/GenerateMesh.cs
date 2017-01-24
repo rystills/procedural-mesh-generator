@@ -7,7 +7,7 @@ public class GenerateMesh : MonoBehaviour {
     public Material material;
     List<Vector3> newVertices;
     List<int> newTrianglePoints;
-    public List<Vector2> newUVs;
+    List<Vector2> newUVs;
     Dictionary<Vector3, Dictionary<string[],int>> vertIndices;
     Texture2D debugTex;
 
@@ -19,35 +19,35 @@ public class GenerateMesh : MonoBehaviour {
         newUVs = new List<Vector2>();
         vertIndices = new Dictionary<Vector3, Dictionary<string[], int>>();
         //build debug texture as a fallback if no material is supplied
-        debugTex = new Texture2D(2, 2, TextureFormat.ARGB32, false);
+        debugTex = new Texture2D(2, 2);
         debugTex.SetPixel(0, 0, Color.red);
-        debugTex.SetPixel(1, 0, Color.green);
+        debugTex.SetPixel(1, 0, Color.magenta);
         debugTex.SetPixel(0, 1, Color.blue);
-        debugTex.SetPixel(1, 1, Color.yellow);
+        debugTex.SetPixel(1, 1, Color.cyan);
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
         //generateMesh("normal", 3,5);
-        generateBox(1, 1, 1);
+        generateBox(3, 5, 7);
     }
 
     //construct a closed box, with length, width, height segments; adapted from generateMesh
     void generateBox(int length, int width, int height) {
         float quadSize = 1;
         string[] allAxes = { "x", "y", "z" };
-
+        int[] allDims = { length, width, height };
         //generate sides in groups of 2; front and back, then left and right, then finally top and bottom
         for (int k = 0; k < 3; ++k) {
             string[] axes = { allAxes[k], allAxes[(k + 1) % allAxes.Length] };
             for (int l = 0; l < 2; ++l) {
                 float pos1 = 0;
-                float pos3 = l == 0 ? 0 : (k == 0 ? height : k == 1 ? length : width) * quadSize;
-                bool shouldFlip = l != 0;
+                //if l is 0, generate first side (no offset); otherwise, generate opposte side (quadSize offset)
+                float pos3 = l == 0 ? 0 : allDims[(k+2)%allDims.Length] * quadSize;
                 //outer loop: iterate over the x axis
-                for (int i = 0; i < (k == 0 ? length : k == 1 ? width : height); ++i) {
+                for (int i = 0; i < allDims[k]; ++i) {
                     float pos2 = 0;
                     //inner loop: create quads while iterating over the y axis
-                    for (int j = 0; j < (k == 0 ? width : k == 1 ? height : length); ++j) {
-                        propogateQuad(axes[0] == "x" ? pos1 : axes[1] == "x" ? pos2 : pos3, axes[0] == "y" ? pos1 : axes[1] == "y" ? pos2 : pos3, axes[0] == "z" ? pos1 : axes[1] == "z" ? pos2 : pos3, axes, quadSize, shouldFlip);
+                    for (int j = 0; j < allDims[(k + 1) % allDims.Length]; ++j) {
+                        propogateQuad(axes[0] == "x" ? pos1 : axes[1] == "x" ? pos2 : pos3, axes[0] == "y" ? pos1 : axes[1] == "y" ? pos2 : pos3, axes[0] == "z" ? pos1 : axes[1] == "z" ? pos2 : pos3, axes, quadSize, l != 0);
                         pos2 += quadSize;
                     }
                     pos1 += quadSize;
@@ -159,6 +159,7 @@ public class GenerateMesh : MonoBehaviour {
         }
         else {
             renderer.material.mainTexture = debugTex;
+            renderer.material.color = Color.white;
         }
     }
 
