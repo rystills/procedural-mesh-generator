@@ -36,7 +36,7 @@ public class GenerateMesh : MonoBehaviour {
     //construct a spiral, with segs quads of width, extents, rotating each quad by iterAngle
     void generateSpiral(float width, float extents, int segs, float iterAngle) {
         Vector3 rotAxis = new Vector3(0, 0, 1);
-        Quaternion rot = new Quaternion(0, 0, 0, 0);
+        Quaternion rot = new Quaternion(0, 0, 0, 1);
         Vector3 pos = new Vector3(0, 0, 0);
         for (int i = 0; i < segs; ++i) {
             pos = propagateQuad(pos,rot,width,extents,false);
@@ -99,39 +99,47 @@ public class GenerateMesh : MonoBehaviour {
     //create an additional quad from position[] of size quadsize in direction dir (returns ending position)
     Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false) {
         //step 1: generate the necessary verts, and corresponding UVs
+        //setup direction vector from rotation Quaternion 
+        Vector3 forwardDir = dir * Vector3.forward;
+        Vector3 topRightPos = pos + (forwardDir.normalized * extents);
+        Quaternion leftRotation = Quaternion.Euler(90,0,0);
+        Vector3 leftDir = leftRotation * forwardDir;
+        Vector3 botLeftPos = pos + (leftDir.normalized * width);
+        Vector3 topLeftPos = botLeftPos + (forwardDir.normalized * extents);
         //generate 2 verts for first side
-        addVert(pos.x, pos.y, pos.z, axes);
-        addVert(pos.x + (axes[0] == "x" ? 0 : axes.Contains("x") ? quadSize : 0), pos.y + (axes[0] == "y" ? 0 : axes.Contains("y") ? quadSize : 0), pos.z + (axes[0] == "z" ? 0 : axes.Contains("z") ? quadSize : 0), axes);
+        addVert(pos, dir, width, extents);
+        addVert(topRightPos, dir, width, extents);
         //generate 2 verts for second sdie
-        addVert(pos.x + (axes[0] == "x" ? quadSize : 0), pos.y + (axes[0] == "y" ? quadSize : 0), pos.z + (axes[0] == "z" ? quadSize : 0), axes);
-        addVert(pos.x + (axes.Contains("x") ? quadSize : 0), pos.y + (axes.Contains("y") ? quadSize : 0), pos.z + (axes.Contains("z") ? quadSize : 0), axes);
+        addVert(botLeftPos, dir, width, extents);
+        addVert(topLeftPos, dir, width, extents);
 
         //step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
-        int topLeftIndex = getVert(pos.x + (axes.Contains("x") ? quadSize : 0), pos.y + (axes.Contains("y") ? quadSize : 0), pos.z + (axes.Contains("z") ? quadSize : 0), axes);
-        int botLeftIndex = getVert(pos.x + (axes[0] == "x" ? quadSize : 0), pos.y + (axes[0] == "y" ? quadSize : 0), pos.z + (axes[0] == "z" ? quadSize : 0), axes);
-        int topRightIndex = getVert(pos.x + (axes[0] == "x" ? 0 : axes.Contains("x") ? quadSize : 0), pos.y + (axes[0] == "y" ? 0 : axes.Contains("y") ? quadSize : 0), pos.z + (axes[0] == "z" ? 0 : axes.Contains("z") ? quadSize : 0), axes);
-        int botRightIndex = getVert(pos.x, pos.y, pos.z, axes);
+        int topLeftIndex = getVert(topLeftPos, dir);
+        int botLeftIndex = getVert(botLeftPos, dir);
+        int topRightIndex = getVert(topRightPos, dir);
+        int botRightIndex = getVert(pos, dir);
         //first new tri
         addTri(botRightIndex, topRightIndex, botLeftIndex, flip);
         //second new tri
         addTri(topRightIndex, topLeftIndex, botLeftIndex, flip);
+        return topRightPos;
     }
 
     //create an additional quad from position[] of size quadSize on axes
     void propagateQuadAxes(float xPos, float yPos, float zPos, string[] axes, float quadSize, bool flip = false) {
         //step 1: generate the necessary verts, and corresponding UVs
         //generate 2 verts for first side
-        addVert(xPos, yPos, zPos, axes);
-        addVert(xPos + (axes[0] == "x" ? 0 : axes.Contains("x") ? quadSize : 0), yPos + (axes[0] == "y" ? 0 : axes.Contains("y") ? quadSize : 0), zPos + (axes[0] == "z" ? 0 : axes.Contains("z") ? quadSize : 0), axes);
+        addVertAxes(xPos, yPos, zPos, axes);
+        addVertAxes(xPos + (axes[0] == "x" ? 0 : axes.Contains("x") ? quadSize : 0), yPos + (axes[0] == "y" ? 0 : axes.Contains("y") ? quadSize : 0), zPos + (axes[0] == "z" ? 0 : axes.Contains("z") ? quadSize : 0), axes);
         //generate 2 verts for second sdie
-        addVert(xPos + (axes[0] == "x" ? quadSize : 0), yPos + (axes[0] == "y" ? quadSize : 0), zPos + (axes[0] == "z" ? quadSize : 0), axes);
-        addVert(xPos + (axes.Contains("x") ? quadSize : 0), yPos + (axes.Contains("y") ? quadSize : 0), zPos + (axes.Contains("z") ? quadSize : 0), axes);
+        addVertAxes(xPos + (axes[0] == "x" ? quadSize : 0), yPos + (axes[0] == "y" ? quadSize : 0), zPos + (axes[0] == "z" ? quadSize : 0), axes);
+        addVertAxes(xPos + (axes.Contains("x") ? quadSize : 0), yPos + (axes.Contains("y") ? quadSize : 0), zPos + (axes.Contains("z") ? quadSize : 0), axes);
 
         //step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
-        int topLeftIndex = getVert(xPos + (axes.Contains("x") ? quadSize : 0), yPos + (axes.Contains("y") ? quadSize : 0), zPos + (axes.Contains("z") ? quadSize : 0),axes);
-        int botLeftIndex = getVert(xPos + (axes[0] == "x" ? quadSize : 0), yPos + (axes[0] == "y" ? quadSize : 0), zPos + (axes[0] == "z" ? quadSize : 0), axes);
-        int topRightIndex = getVert(xPos + (axes[0] == "x" ? 0 : axes.Contains("x") ? quadSize : 0), yPos + (axes[0] == "y" ? 0 : axes.Contains("y") ? quadSize : 0), zPos + (axes[0] == "z" ? 0 : axes.Contains("z") ? quadSize : 0), axes);
-        int botRightIndex = getVert(xPos, yPos, zPos, axes);
+        int topLeftIndex = getVertAxes(xPos + (axes.Contains("x") ? quadSize : 0), yPos + (axes.Contains("y") ? quadSize : 0), zPos + (axes.Contains("z") ? quadSize : 0),axes);
+        int botLeftIndex = getVertAxes(xPos + (axes[0] == "x" ? quadSize : 0), yPos + (axes[0] == "y" ? quadSize : 0), zPos + (axes[0] == "z" ? quadSize : 0), axes);
+        int topRightIndex = getVertAxes(xPos + (axes[0] == "x" ? 0 : axes.Contains("x") ? quadSize : 0), yPos + (axes[0] == "y" ? 0 : axes.Contains("y") ? quadSize : 0), zPos + (axes[0] == "z" ? 0 : axes.Contains("z") ? quadSize : 0), axes);
+        int botRightIndex = getVertAxes(xPos, yPos, zPos, axes);
         //first new tri
         addTri(botRightIndex, topRightIndex, botLeftIndex, flip);
         //second new tri
@@ -143,18 +151,49 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //add a new vert with corresponding UVs if xPos,yPos does not already contain one, and add this vert's position in newVertices to vertIndicesAxes
-    void addVert(float xPos, float yPos, float zPos, string[] axes) {
+    void addVert(Vector3 pos, Quaternion dir, float width, float extents) {
         //make sure there is not already a vertex at xPos,yPos 
-        if (getVert(xPos,yPos,zPos,axes) != -1) {
+        if (getVert(pos, dir) != -1) {
+            return;
+        }
+        newVertices.Add(pos);
+        newUVs.Add(new Vector2(width,extents));
+        setVert(newVertices[newVertices.Count - 1], dir, newVertices.Count - 1);
+    }
+
+    //set vertex at pos, facing in dir axes
+    void setVert(Vector3 pos, Quaternion dir, int index) {
+        if (!vertIndices.ContainsKey(pos)) {
+            vertIndices[pos] = new Dictionary<Quaternion, int>();
+        }
+        vertIndices[pos][dir] = index;
+    }
+
+    //return index of vert at xPos, yPos, zPos facing in dir axes, -1 if not present
+    int getVert(Vector3 pos, Quaternion dir) {
+        if (!vertIndices.ContainsKey(pos)) {
+            return -1;
+        }
+        Dictionary<Quaternion, int> key = vertIndices[pos];
+        if (!key.ContainsKey(dir)) {
+            return -1;
+        }
+        return key[dir];
+    }
+
+    //add a new vert with corresponding UVs if xPos,yPos does not already contain one, and add this vert's position in newVertices to vertIndicesAxes
+    void addVertAxes(float xPos, float yPos, float zPos, string[] axes) {
+        //make sure there is not already a vertex at xPos,yPos 
+        if (getVertAxes(xPos,yPos,zPos,axes) != -1) {
             return;
         }
         newVertices.Add(new Vector3(xPos, yPos, zPos));
         newUVs.Add(new Vector2(axes[0] == "x" ? xPos : axes[0] == "y" ? yPos : zPos, axes[1] == "x" ? xPos : axes[1] == "y" ? yPos : zPos));
-        setVert(newVertices[newVertices.Count - 1],axes, newVertices.Count - 1);
+        setVertAxes(newVertices[newVertices.Count - 1],axes, newVertices.Count - 1);
     }
 
     //set vertex at pos, facing in dir axes
-    void setVert(Vector3 pos, string[] axes, int index) {
+    void setVertAxes(Vector3 pos, string[] axes, int index) {
         if (!vertIndicesAxes.ContainsKey(pos)) {
             vertIndicesAxes[pos] = new Dictionary<string[], int>();
         }
@@ -162,7 +201,7 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //return index of vert at xPos, yPos, zPos facing in dir axes, -1 if not present
-    int getVert(float xPos, float yPos, float zPos, string[] axes) {
+    int getVertAxes(float xPos, float yPos, float zPos, string[] axes) {
         if (!vertIndicesAxes.ContainsKey(new Vector3(xPos, yPos, zPos))) {
             return -1;
         }
