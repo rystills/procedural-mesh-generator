@@ -102,7 +102,7 @@ public class GenerateMesh : MonoBehaviour {
     }
     
     //create an additional quad from position[] of size quadsize in direction dir (returns ending position)
-    Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false) {
+    Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false, string uvMode = "per face") {
         //step 1: generate the necessary verts, and corresponding UVs
         //setup direction vector from rotation Quaternion 
         Vector3 forwardDir = dir * Vector3.forward;
@@ -112,11 +112,19 @@ public class GenerateMesh : MonoBehaviour {
         Vector3 botLeftPos = pos + (leftDir.normalized * extents);
         Vector3 topLeftPos = botLeftPos + (forwardDir.normalized * width);
         //generate 2 verts for first side
-        addVert(pos, dir, extents, width);
-        addVert(topRightPos, dir, extents, width);
+        if (addVert(pos, dir)) {
+            addUV(pos, pos, topRightPos, botLeftPos, uvMode);
+        }
+        if (addVert(topRightPos, dir)) {
+            addUV(topRightPos, pos, topRightPos, botLeftPos, uvMode);
+        }
         //generate 2 verts for second sdie
-        addVert(botLeftPos, dir, extents, width);
-        addVert(topLeftPos, dir, extents, width);
+        if (addVert(botLeftPos, dir)) {
+            addUV(botLeftPos, pos, topRightPos, botLeftPos, uvMode);
+        }
+        if (addVert(topLeftPos, dir)) {
+            addUV(topLeftPos, pos, topRightPos, botLeftPos, uvMode);
+        }
 
         //step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
         int topLeftIndex = getVert(topLeftPos, dir);
@@ -156,15 +164,29 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //add a new vert with corresponding UVs if xPos,yPos does not already contain one, and add this vert's position in newVertices to vertIndicesAxes
-    void addVert(Vector3 pos, Quaternion dir, float width, float extents) {
+    bool addVert(Vector3 pos, Quaternion dir) {
         //make sure there is not already a vertex at xPos,yPos 
         if (getVert(pos, dir) != -1) {
-            return;
+            return false;
         }
         newVertices.Add(pos);
-        
-        newUVs.Add(new Vector2(width,extents));
         setVert(newVertices[newVertices.Count - 1], dir, newVertices.Count - 1);
+        return true;
+    }
+
+    //calculate UV for point pos given points a,b,c (pos will typically be equivalent to one of these 3 points)
+    void addUV(Vector3 pos, Vector3 a, Vector3 b, Vector3 c, string uvMode) {
+        //Vector3 normal = calculateNormal(a, b, c);
+        if (uvMode == "per face") {
+            newUVs.Add(pos == a ? new Vector2(0, 0) : pos == b ? new Vector2(0, 1) : pos == c ? new Vector2(1, 0) : new Vector2(1, 1));
+        }
+    }
+
+    Vector3 calculateNormal(Vector3 a, Vector3 b, Vector3 c) {
+        Vector3 side1 = b - a;
+        Vector3 side2 = c - a;
+        Vector3 perp = Vector3.Cross(side1, side2);
+        return perp / perp.magnitude;
     }
 
     //set vertex at pos, facing in dir axes
