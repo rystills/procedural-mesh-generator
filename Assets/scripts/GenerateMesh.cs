@@ -30,12 +30,12 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.Apply();
         //generateMesh("normal", 3,5);
         //generateBox(3, 5, 7);
-        generateSpiral(2,1,8,45);
+        generateSpiral(2,1,8,45f);
     }
 
     //construct a spiral, with segs quads of width, extents, rotating each quad by iterAngle
     void generateSpiral(float width, float extents, int segs, float iterAngle) {
-        Vector3 rotAxis = new Vector3(0, 1, 0);//Vector3.forward;
+        Vector3 rotAxis = Vector3.forward;
         Quaternion rot = new Quaternion(0,0,0,1);
         Vector3 pos = new Vector3(0, 0, 0);
         for (int i = 0; i < segs; ++i) {
@@ -48,7 +48,7 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     Quaternion rotateQuaternion(Quaternion quat, Vector3 rotAxis, float amount) {
-        return quat * (Quaternion.Inverse(quat) * Quaternion.AngleAxis(amount, rotAxis) * quat);
+        return quat * Quaternion.Euler(rotAxis * amount);
     }
 
     //construct a closed box, with length, width, height segments; adapted from generateMesh
@@ -108,8 +108,8 @@ public class GenerateMesh : MonoBehaviour {
         Vector3 forwardDir = dir * Vector3.forward;
         Debug.Log("forwardDir: " + forwardDir);
         Vector3 topRightPos = pos + (forwardDir.normalized * extents);
-        Quaternion leftRotation = Quaternion.Euler(90,0,0);
-        Vector3 leftDir = leftRotation * forwardDir;
+        Quaternion leftRotation = rotateQuaternion(dir, new Vector3(1, 0, 0), 90);
+        Vector3 leftDir = leftRotation * Vector3.forward;
         Debug.Log("leftDir: " + leftDir);
         Vector3 botLeftPos = pos + (leftDir.normalized * width);
         Vector3 topLeftPos = botLeftPos + (forwardDir.normalized * extents);
