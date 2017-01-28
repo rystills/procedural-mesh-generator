@@ -30,20 +30,25 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.Apply();
         //generateMesh("normal", 3,5);
         //generateBox(3, 5, 7);
-        generateSpiral(2,1,6,30);
+        generateSpiral(2,1,8,45);
     }
 
     //construct a spiral, with segs quads of width, extents, rotating each quad by iterAngle
     void generateSpiral(float width, float extents, int segs, float iterAngle) {
-        Vector3 rotAxis = new Vector3(0, 0, 1);
-        Quaternion rot = new Quaternion(0, 0, 0, 1);
+        Vector3 rotAxis = new Vector3(0, 1, 0);//Vector3.forward;
+        Quaternion rot = new Quaternion(0,0,0,1);
         Vector3 pos = new Vector3(0, 0, 0);
         for (int i = 0; i < segs; ++i) {
             pos = propagateQuad(pos,rot,width,extents,false);
-            rot = rot * (Quaternion.Inverse(rot) * Quaternion.AngleAxis(iterAngle, rotAxis) * rot);
+            //Debug.Log(rot);
+            rot = rotateQuaternion(rot, rotAxis, iterAngle);
             //Quaternion doorFinalRotation = rot * (Quaternion.Inverse(rot) * Quaternion.AngleAxis(90f, doorObject.transform.forward) * rot);
         }
         finalizeMesh();
+    }
+
+    Quaternion rotateQuaternion(Quaternion quat, Vector3 rotAxis, float amount) {
+        return quat * (Quaternion.Inverse(quat) * Quaternion.AngleAxis(amount, rotAxis) * quat);
     }
 
     //construct a closed box, with length, width, height segments; adapted from generateMesh
@@ -101,9 +106,11 @@ public class GenerateMesh : MonoBehaviour {
         //step 1: generate the necessary verts, and corresponding UVs
         //setup direction vector from rotation Quaternion 
         Vector3 forwardDir = dir * Vector3.forward;
+        Debug.Log("forwardDir: " + forwardDir);
         Vector3 topRightPos = pos + (forwardDir.normalized * extents);
         Quaternion leftRotation = Quaternion.Euler(90,0,0);
         Vector3 leftDir = leftRotation * forwardDir;
+        Debug.Log("leftDir: " + leftDir);
         Vector3 botLeftPos = pos + (leftDir.normalized * width);
         Vector3 topLeftPos = botLeftPos + (forwardDir.normalized * extents);
         //generate 2 verts for first side
@@ -122,7 +129,7 @@ public class GenerateMesh : MonoBehaviour {
         addTri(botRightIndex, topRightIndex, botLeftIndex, flip);
         //second new tri
         addTri(topRightIndex, topLeftIndex, botLeftIndex, flip);
-        return topRightPos;
+        return botLeftPos;
     }
 
     //create an additional quad from position[] of size quadSize on axes
@@ -246,6 +253,6 @@ public class GenerateMesh : MonoBehaviour {
     void Update() {
         //gameObject.GetComponent<MeshFilter>().mesh.uv = newUVs.ToArray();
         //Debug.Log(gameObject.transform.localRotation);
-        Debug.Log(gameObject.transform.forward);
+        //Debug.Log(gameObject.transform.forward);
     }
 }
