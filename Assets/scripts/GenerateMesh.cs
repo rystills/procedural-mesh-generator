@@ -231,7 +231,7 @@ public class GenerateMesh : MonoBehaviour {
 
     //calculate UV for point pos given points a,b,c (pos will typically be equivalent to one of these 3 points)
     void addUV(Vector3 pos, Quaternion dir, Vector3 a, Vector3 b, Vector3 c, string uvMode) {
-        newNormals.Add(calculateNormal(a, b, c));
+        newNormals.Add(calculateNormal(a, c, b));
         if (uvMode == "per face") {
             newUVs.Add(pos == a ? new Vector2(0, 0) : pos == b ? new Vector2(0, 1) : pos == c ? new Vector2(1, 0) : new Vector2(1, 1));
         }
@@ -346,8 +346,8 @@ public class GenerateMesh : MonoBehaviour {
         mesh.triangles = newTrianglePoints.ToArray();
         mesh.uv = newUVs.ToArray();
         meshFilter.mesh.RecalculateBounds();
-        //mesh.normals = newNormals.ToArray();
-        meshFilter.mesh.RecalculateNormals();
+        meshFilter.mesh.normals = newNormals.ToArray();
+        //meshFilter.mesh.RecalculateNormals();
         MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
         if (!meshRenderer) {
             meshRenderer = gameObject.AddComponent<MeshRenderer>();
