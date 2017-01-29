@@ -10,6 +10,8 @@ public class GenerateMesh : MonoBehaviour {
     List<Vector2> newUVs;
     Dictionary<Vector3, Dictionary<string[],int>> vertIndicesAxes;
     Dictionary<Vector3, Dictionary<Quaternion, int>> vertIndices;
+    Dictionary<Vector3, Dictionary<Quaternion, Vector2>> vertUVs;
+    Dictionary<Vector3, Dictionary<Quaternion, List<int>>> connectedVertIDs;
     Texture2D debugTex;
 
 
@@ -20,6 +22,8 @@ public class GenerateMesh : MonoBehaviour {
         newUVs = new List<Vector2>();
         vertIndicesAxes = new Dictionary<Vector3, Dictionary<string[], int>>();
         vertIndices = new Dictionary<Vector3, Dictionary<Quaternion, int>>();
+        vertUVs = new Dictionary<Vector3, Dictionary<Quaternion, Vector2>>();
+        connectedVertIDs = new Dictionary<Vector3, Dictionary<Quaternion, List<int>>>();
         //build debug texture as a fallback if no material is supplied
         debugTex = new Texture2D(2, 2);
         debugTex.SetPixel(0, 0, Color.red);
@@ -113,17 +117,17 @@ public class GenerateMesh : MonoBehaviour {
         Vector3 topLeftPos = botLeftPos + (forwardDir.normalized * width);
         //generate 2 verts for first side
         if (addVert(pos, dir)) {
-            addUV(pos, pos, topRightPos, botLeftPos, uvMode);
+            addUV(pos, dir, pos, topRightPos, botLeftPos, uvMode);
         }
         if (addVert(topRightPos, dir)) {
-            addUV(topRightPos, pos, topRightPos, botLeftPos, uvMode);
+            addUV(topRightPos, dir, pos, topRightPos, botLeftPos, uvMode);
         }
         //generate 2 verts for second sdie
         if (addVert(botLeftPos, dir)) {
-            addUV(botLeftPos, pos, topRightPos, botLeftPos, uvMode);
+            addUV(botLeftPos, dir, pos, topRightPos, botLeftPos, uvMode);
         }
         if (addVert(topLeftPos, dir)) {
-            addUV(topLeftPos, pos, topRightPos, botLeftPos, uvMode);
+            addUV(topLeftPos, dir, pos, topRightPos, botLeftPos, uvMode);
         }
 
         //step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
@@ -132,9 +136,9 @@ public class GenerateMesh : MonoBehaviour {
         int topRightIndex = getVert(topRightPos, dir);
         int botRightIndex = getVert(pos, dir);
         //first new tri
-        addTri(botRightIndex, topRightIndex, botLeftIndex, flip);
+        addTri(botRightIndex, topRightIndex, botLeftIndex, dir, flip);
         //second new tri
-        addTri(topRightIndex, topLeftIndex, botLeftIndex, flip);
+        addTri(topRightIndex, topLeftIndex, botLeftIndex, dir, flip);
         return botLeftPos;
     }
 
@@ -154,9 +158,9 @@ public class GenerateMesh : MonoBehaviour {
         int topRightIndex = getVertAxes(xPos + (axes[0] == "x" ? 0 : axes.Contains("x") ? quadSize : 0), yPos + (axes[0] == "y" ? 0 : axes.Contains("y") ? quadSize : 0), zPos + (axes[0] == "z" ? 0 : axes.Contains("z") ? quadSize : 0), axes);
         int botRightIndex = getVertAxes(xPos, yPos, zPos, axes);
         //first new tri
-        addTri(botRightIndex, topRightIndex, botLeftIndex, flip);
+        addTriAxes(botRightIndex, topRightIndex, botLeftIndex, flip);
         //second new tri
-        addTri(topRightIndex, topLeftIndex, botLeftIndex, flip);
+        addTriAxes(topRightIndex, topLeftIndex, botLeftIndex, flip);
     }
 
     void propagateQuadAxes(float[] positions, string[] axes, float quadSize, bool flip = false) {
@@ -175,10 +179,11 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //calculate UV for point pos given points a,b,c (pos will typically be equivalent to one of these 3 points)
-    void addUV(Vector3 pos, Vector3 a, Vector3 b, Vector3 c, string uvMode) {
+    void addUV(Vector3 pos, Quaternion dir, Vector3 a, Vector3 b, Vector3 c, string uvMode) {
         //Vector3 normal = calculateNormal(a, b, c);
         if (uvMode == "per face") {
             newUVs.Add(pos == a ? new Vector2(0, 0) : pos == b ? new Vector2(0, 1) : pos == c ? new Vector2(1, 0) : new Vector2(1, 1));
+            setUV(pos, dir, newUVs[newUVs.Count - 1]);
         }
     }
 
@@ -187,6 +192,13 @@ public class GenerateMesh : MonoBehaviour {
         Vector3 side2 = c - a;
         Vector3 perp = Vector3.Cross(side1, side2);
         return perp / perp.magnitude;
+    }
+
+    void setUV(Vector3 pos, Quaternion dir, Vector2 val) {
+        if (!vertUVs.ContainsKey(pos)) {
+            vertUVs[pos] = new Dictionary<Quaternion, Vector2>();
+        }
+        vertUVs[pos][dir] = val;
     }
 
     //set vertex at pos, facing in dir axes
@@ -241,7 +253,26 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //simple helper method to add 3 points to the newTrianglePoints list
-    void addTri(int index1, int index2, int index3, bool flip = false) {
+    void addTri(int index1, int index2, int index3, Quaternion dir, bool flip = false) {
+        newTrianglePoints.Add(flip ? index3 : index1);
+        newTrianglePoints.Add(index2);
+        newTrianglePoints.Add(flip ? index1 : index3);
+        connectedVertIDs[newVertices[index1]] = new Dictionary<Quaternion, List<int>>();
+        connectedVertIDs[newVertices[index1]][dir] = new List<int>();
+        connectedVertIDs[newVertices[index1]][dir].Add(index2);
+        connectedVertIDs[newVertices[index1]][dir].Add(index3);
+        connectedVertIDs[newVertices[index2]] = new Dictionary<Quaternion, List<int>>();
+        connectedVertIDs[newVertices[index2]][dir] = new List<int>();
+        connectedVertIDs[newVertices[index2]][dir].Add(index1);
+        connectedVertIDs[newVertices[index2]][dir].Add(index3);
+        connectedVertIDs[newVertices[index3]] = new Dictionary<Quaternion, List<int>>();
+        connectedVertIDs[newVertices[index3]][dir] = new List<int>();
+        connectedVertIDs[newVertices[index3]][dir].Add(index1);
+        connectedVertIDs[newVertices[index3]][dir].Add(index2);
+    }
+
+    //simple helper method to add 3 points to the newTrianglePoints list
+    void addTriAxes(int index1, int index2, int index3, bool flip = false) {
         newTrianglePoints.Add(flip ? index3 : index1);
         newTrianglePoints.Add(index2);
         newTrianglePoints.Add(flip ? index1 : index3);
