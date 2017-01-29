@@ -12,6 +12,7 @@ public class GenerateMesh : MonoBehaviour {
     Dictionary<Vector3, Dictionary<Quaternion, int>> vertIndices;
     Dictionary<Vector3, Dictionary<Quaternion, List<int>>> connectedVertIDs;
     Texture2D debugTex;
+    const float smoothnessFloatTolerance = .1f;
 
 
     void Start() {
@@ -41,7 +42,7 @@ public class GenerateMesh : MonoBehaviour {
         Quaternion rot = new Quaternion(0,0,0,1);
         Vector3 pos = new Vector3(0, 0, 0);
         for (int i = 0; i < segs; ++i) {
-            //propagateQuad(pos, rot, width, extents, true, iterAngle); //generate back-facing quad (flipped normal)
+            propagateQuad(pos, rot, width, extents, true, iterAngle); //generate back-facing quad (flipped normal)
             pos = propagateQuad(pos,rot,width,extents,false,iterAngle); //generate forward-facing quad and update current vertex position
             rot = rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
             extents -= .01f; //decrease segment length
@@ -105,6 +106,7 @@ public class GenerateMesh : MonoBehaviour {
     
     //create an additional quad from position[] of size quadsize in direction dir (returns ending position)
     Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false, float vertSmoothnessthreshold = 0, string uvMode = "per face") {
+        Debug.Log("calling propagateQuad");
         //step 1: generate the necessary verts, and corresponding UVs
         //setup direction vector from rotation Quaternion 
         Vector3 forwardDir = dir * Vector3.forward;
@@ -129,10 +131,14 @@ public class GenerateMesh : MonoBehaviour {
         }
 
         //step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
-        int topLeftIndex = getVert(topLeftPos, dir);
-        int botLeftIndex = getVert(botLeftPos, dir);
-        int topRightIndex = getVert(topRightPos, dir);
-        int botRightIndex = getVert(pos, dir);
+        int topLeftIndex = getVert(topLeftPos, dir, vertSmoothnessthreshold);
+        topLeftIndex = topLeftIndex == -1 ? getVert(topLeftPos, flipQuaternion(dir), vertSmoothnessthreshold) : topLeftIndex;
+        int botLeftIndex = getVert(botLeftPos, dir, vertSmoothnessthreshold);
+        botLeftIndex = botLeftIndex == -1 ? getVert(botLeftPos, flipQuaternion(dir), vertSmoothnessthreshold) : botLeftIndex;
+        int topRightIndex = getVert(topRightPos, dir, vertSmoothnessthreshold);
+        topRightIndex = topRightIndex == -1 ? getVert(topRightPos, flipQuaternion(dir), vertSmoothnessthreshold) : topRightIndex;
+        int botRightIndex = getVert(pos, dir, vertSmoothnessthreshold);
+        botRightIndex = botRightIndex == -1 ? getVert(pos, flipQuaternion(dir), vertSmoothnessthreshold) : botRightIndex;
         //first new tri
         addTri(botRightIndex, topRightIndex, botLeftIndex, dir, flip);
         //second new tri
@@ -165,19 +171,24 @@ public class GenerateMesh : MonoBehaviour {
         propagateQuadAxes(positions[0],positions[1],positions[2], axes, quadSize, flip);
     }
 
+    Quaternion flipQuaternion(Quaternion quat) {
+        return (new Quaternion(1, 0, 0, 0)) * quat;
+    }
+
     //add a new vert with corresponding UVs if xPos,yPos does not already contain one, and add this vert's position in newVertices to vertIndicesAxes
     bool addVert(Vector3 pos, Quaternion dir, bool flip, float vertSmoothnessthreshold) {
         //if flipped, rotate the quaternion by 180 degrees on any axis
         Quaternion finalDir = dir;
         if (flip) {
-             finalDir = (new Quaternion(1,0,0,0))* finalDir;
+            finalDir = flipQuaternion(finalDir);
         }
         //make sure there are no vertices within vertSmoothnessthreshold at pos
-        if (getVert(pos, dir) != -1) {
+        if (vertIndices.ContainsKey(pos)) {
             Dictionary<Quaternion, int> quatKey = vertIndices[pos];
             foreach (Quaternion key in quatKey.Keys) {
                 float angleDiff = Quaternion.Angle(dir, key);
-                if (angleDiff < vertSmoothnessthreshold) {
+                Debug.Log(angleDiff);
+                if (angleDiff < vertSmoothnessthreshold + smoothnessFloatTolerance) {
                     return false;
                 }
             }
@@ -203,8 +214,8 @@ public class GenerateMesh : MonoBehaviour {
         return perp / perp.magnitude;
     }
 
-    Vector2 getVertUV(Vector3 pos, Quaternion dir) {
-        int vertIndex = getVert(pos, dir);
+    Vector2 getVertUV(Vector3 pos, Quaternion dir, float vertSmoothnessthreshold) {
+        int vertIndex = getVert(pos, dir, vertSmoothnessthreshold);
         if (vertIndex == -1) {
             throw new System.Exception();
         }
@@ -220,15 +231,19 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //return index of vert at xPos, yPos, zPos facing in dir axes, -1 if not present
-    int getVert(Vector3 pos, Quaternion dir) {
+    int getVert(Vector3 pos, Quaternion dir, float vertSmoothnessthreshold) { //check if vertex exists at pos
         if (!vertIndices.ContainsKey(pos)) {
             return -1;
         }
-        Dictionary<Quaternion, int> key = vertIndices[pos];
-        if (!key.ContainsKey(dir)) {
-            return -1;
+        Dictionary<Quaternion, int> quatKey = vertIndices[pos]; //check for a vertex within float tolerance
+        foreach (Quaternion key in quatKey.Keys) {
+            float angleDiff = Quaternion.Angle(dir, key);
+            Debug.Log("angleDiff: " + angleDiff + ", dir: " + dir + ", key: " + key);
+            if (angleDiff < vertSmoothnessthreshold + smoothnessFloatTolerance) {
+                return quatKey[key];
+            }
         }
-        return key[dir];
+        return -1;
     }
 
     //add a new vert with corresponding UVs if xPos,yPos does not already contain one, and add this vert's position in newVertices to vertIndicesAxes
@@ -267,6 +282,7 @@ public class GenerateMesh : MonoBehaviour {
         newTrianglePoints.Add(flip ? index3 : index1);
         newTrianglePoints.Add(index2);
         newTrianglePoints.Add(flip ? index1 : index3);
+        Debug.Log("index1: " + index1 + ", index2: " + index2 + ", index3: " + index3 + ", dir: " + dir);
         connectedVertIDs[newVertices[index1]] = new Dictionary<Quaternion, List<int>>();
         connectedVertIDs[newVertices[index1]][dir] = new List<int>();
         connectedVertIDs[newVertices[index1]][dir].Add(index2);
