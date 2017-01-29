@@ -10,7 +10,6 @@ public class GenerateMesh : MonoBehaviour {
     List<Vector2> newUVs;
     Dictionary<Vector3, Dictionary<string[],int>> vertIndicesAxes;
     Dictionary<Vector3, Dictionary<Quaternion, int>> vertIndices;
-    Dictionary<Vector3, Dictionary<Quaternion, Vector2>> vertUVs;
     Dictionary<Vector3, Dictionary<Quaternion, List<int>>> connectedVertIDs;
     Texture2D debugTex;
 
@@ -22,7 +21,6 @@ public class GenerateMesh : MonoBehaviour {
         newUVs = new List<Vector2>();
         vertIndicesAxes = new Dictionary<Vector3, Dictionary<string[], int>>();
         vertIndices = new Dictionary<Vector3, Dictionary<Quaternion, int>>();
-        vertUVs = new Dictionary<Vector3, Dictionary<Quaternion, Vector2>>();
         connectedVertIDs = new Dictionary<Vector3, Dictionary<Quaternion, List<int>>>();
         //build debug texture as a fallback if no material is supplied
         debugTex = new Texture2D(2, 2);
@@ -183,7 +181,6 @@ public class GenerateMesh : MonoBehaviour {
         //Vector3 normal = calculateNormal(a, b, c);
         if (uvMode == "per face") {
             newUVs.Add(pos == a ? new Vector2(0, 0) : pos == b ? new Vector2(0, 1) : pos == c ? new Vector2(1, 0) : new Vector2(1, 1));
-            setUV(pos, dir, newUVs[newUVs.Count - 1]);
         }
     }
 
@@ -194,11 +191,12 @@ public class GenerateMesh : MonoBehaviour {
         return perp / perp.magnitude;
     }
 
-    void setUV(Vector3 pos, Quaternion dir, Vector2 val) {
-        if (!vertUVs.ContainsKey(pos)) {
-            vertUVs[pos] = new Dictionary<Quaternion, Vector2>();
+    Vector2 getVertUV(Vector3 pos, Quaternion dir) {
+        int vertIndex = getVert(pos, dir);
+        if (vertIndex == -1) {
+            throw new System.Exception();
         }
-        vertUVs[pos][dir] = val;
+        return newUVs[vertIndex];
     }
 
     //set vertex at pos, facing in dir axes
