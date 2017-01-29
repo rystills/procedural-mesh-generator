@@ -15,7 +15,6 @@ public class GenerateMesh : MonoBehaviour {
     Texture2D debugTex;
     const float smoothnessFloatTolerance = .5f;
 
-
     void Start() {
         //init mesh lists
         newVertices = new List<Vector3>();
@@ -372,5 +371,13 @@ public class GenerateMesh : MonoBehaviour {
         //gameObject.GetComponent<MeshFilter>().mesh.uv = newUVs.ToArray();
         //Debug.Log(gameObject.transform.localRotation);
         //Debug.Log(gameObject.transform.forward);
+
+        //undulate verts based on timer and position in list
+        for (int i = 0; i < newVertices.Count; ++i) {
+            newVertices[i] += (newNormals[i].normalized * Mathf.Sin(Time.time + (i/10)));
+        }
+        Mesh mesh = GetComponent<MeshFilter>().mesh;
+        mesh.vertices = newVertices.ToArray();
+
     }
 }

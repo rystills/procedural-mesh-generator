@@ -79,3 +79,6 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+#ignore build tessts
+/build_tests
