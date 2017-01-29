@@ -6,6 +6,7 @@ using System.Linq;
 public class GenerateMesh : MonoBehaviour {
     public Material material;
     List<Vector3> newVertices;
+    List<Vector3> newNormals;
     List<int> newTrianglePoints;
     List<Vector2> newUVs;
     Dictionary<Vector3, Dictionary<string[],int>> vertIndicesAxes;
@@ -18,6 +19,7 @@ public class GenerateMesh : MonoBehaviour {
     void Start() {
         //init mesh lists
         newVertices = new List<Vector3>();
+        newNormals = new List<Vector3>();
         newTrianglePoints = new List<int>();
         newUVs = new List<Vector2>();
         vertIndicesAxes = new Dictionary<Vector3, Dictionary<string[], int>>();
@@ -33,21 +35,49 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.Apply();
         //generateMesh("normal", 3,5);
         //generateBox(3, 5, 7);
-        generateSpiral(2,1,100,16);
+        List<int> spiralVerts = generateSpiral(2,1,200,8);
+        if (spiralVerts != null) {
+            displaceVerts(.2f,spiralVerts[0],spiralVerts[1]);
+        }
+        finalizeMesh();
+    }
+
+    //apply a random displacement between -maxDisp and +maxDisp from vert startIndex to vert endIndex (both inclusive)
+    void displaceVerts(float maxDisp, int startIndex, int endIndex) {
+        //finalizeMesh(); //finalize mesh to get current normals
+        for (int i = startIndex; i <= endIndex; ++i) {
+            float curDisp = Random.Range(-1 * maxDisp, maxDisp);
+            newVertices[i] += (newNormals[i].normalized * curDisp);
+        }
+    }
+
+    Quaternion getVertRotation(int vertIndex) {
+        Dictionary<Quaternion, int> curVertCandidates = vertIndices[newVertices[vertIndex]];
+        foreach (Quaternion dir in curVertCandidates.Keys) {
+            if (curVertCandidates[dir] == vertIndex) {
+                return dir;
+            }
+        }
+        throw new System.Exception();
     }
 
     //construct a spiral, with segs quads of width, extents, rotating each quad by iterAngle
-    void generateSpiral(float width, float extents, int segs, float iterAngle) {
+    List<int> generateSpiral(float width, float extents, int segs, float iterAngle) {
         Vector3 rotAxis = Vector3.forward;
         Quaternion rot = new Quaternion(0,0,0,1);
         Vector3 pos = new Vector3(0, 0, 0);
+        int startVertIndex = newVertices.Count;
         for (int i = 0; i < segs; ++i) {
             propagateQuad(pos, rot, width, extents, true, iterAngle); //generate back-facing quad (flipped normal)
             pos = propagateQuad(pos,rot,width,extents,false, iterAngle); //generate forward-facing quad and update current vertex position
             rot = rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
-            extents -= .01f; //decrease segment length
+            extents -= .005f; //decrease segment length
         }
-        finalizeMesh();
+        if (segs == 0 || startVertIndex == newVertices.Count) { //if we didnt make any new verts, return an empty list
+            return null;
+        }
+        return new List<int> { startVertIndex, newVertices.Count - 1 };
+        
     }
 
     Quaternion rotateQuaternion(Quaternion quat, Vector3 rotAxis, float amount) {
@@ -201,7 +231,7 @@ public class GenerateMesh : MonoBehaviour {
 
     //calculate UV for point pos given points a,b,c (pos will typically be equivalent to one of these 3 points)
     void addUV(Vector3 pos, Quaternion dir, Vector3 a, Vector3 b, Vector3 c, string uvMode) {
-        //Vector3 normal = calculateNormal(a, b, c);
+        newNormals.Add(calculateNormal(a, b, c));
         if (uvMode == "per face") {
             newUVs.Add(pos == a ? new Vector2(0, 0) : pos == b ? new Vector2(0, 1) : pos == c ? new Vector2(1, 0) : new Vector2(1, 1));
         }
@@ -307,17 +337,27 @@ public class GenerateMesh : MonoBehaviour {
     //construct the new mesh, and attach the appropriate components
     void finalizeMesh() {
         Mesh mesh = new Mesh();
-        MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
+        MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
+        if (!meshFilter) {
+            meshFilter = gameObject.AddComponent<MeshFilter>();
+        }
         meshFilter.mesh = mesh;
         mesh.vertices = newVertices.ToArray();
         mesh.triangles = newTrianglePoints.ToArray();
         mesh.uv = newUVs.ToArray();
         meshFilter.mesh.RecalculateBounds();
+        //mesh.normals = newNormals.ToArray();
         meshFilter.mesh.RecalculateNormals();
-        MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
+        MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
+        if (!meshRenderer) {
+            meshRenderer = gameObject.AddComponent<MeshRenderer>();
+        }
         Renderer renderer = meshRenderer.GetComponent<Renderer>();
         renderer.material.color = Color.blue;
-        MeshCollider meshCollider = gameObject.AddComponent<MeshCollider>();
+        MeshCollider meshCollider = gameObject.GetComponent<MeshCollider>();
+        if (!meshCollider) {
+            meshCollider = gameObject.AddComponent<MeshCollider>();
+        }
         meshCollider.sharedMesh = mesh;
         if (material) {
             renderer.material = material;
