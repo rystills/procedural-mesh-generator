@@ -41,8 +41,8 @@ public class GenerateMesh : MonoBehaviour {
         Quaternion rot = new Quaternion(0,0,0,1);
         Vector3 pos = new Vector3(0, 0, 0);
         for (int i = 0; i < segs; ++i) {
-            propagateQuad(pos, rot, width, extents, true); //generate back-facing quad (flipped normal)
-            pos = propagateQuad(pos,rot,width,extents,false); //generate forward-facing quad and update current vertex position
+            //propagateQuad(pos, rot, width, extents, true, iterAngle); //generate back-facing quad (flipped normal)
+            pos = propagateQuad(pos,rot,width,extents,false,iterAngle); //generate forward-facing quad and update current vertex position
             rot = rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
             extents -= .01f; //decrease segment length
         }
@@ -104,7 +104,7 @@ public class GenerateMesh : MonoBehaviour {
     }
     
     //create an additional quad from position[] of size quadsize in direction dir (returns ending position)
-    Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false, string uvMode = "per face") {
+    Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false, float vertSmoothnessthreshold = 0, string uvMode = "per face") {
         //step 1: generate the necessary verts, and corresponding UVs
         //setup direction vector from rotation Quaternion 
         Vector3 forwardDir = dir * Vector3.forward;
@@ -114,17 +114,17 @@ public class GenerateMesh : MonoBehaviour {
         Vector3 botLeftPos = pos + (leftDir.normalized * extents);
         Vector3 topLeftPos = botLeftPos + (forwardDir.normalized * width);
         //generate 2 verts for first side
-        if (addVert(pos, dir)) {
+        if (addVert(pos, dir, flip, vertSmoothnessthreshold)) {
             addUV(pos, dir, pos, topRightPos, botLeftPos, uvMode);
         }
-        if (addVert(topRightPos, dir)) {
+        if (addVert(topRightPos, dir, flip, vertSmoothnessthreshold)) {
             addUV(topRightPos, dir, pos, topRightPos, botLeftPos, uvMode);
         }
         //generate 2 verts for second sdie
-        if (addVert(botLeftPos, dir)) {
+        if (addVert(botLeftPos, dir, flip, vertSmoothnessthreshold)) {
             addUV(botLeftPos, dir, pos, topRightPos, botLeftPos, uvMode);
         }
-        if (addVert(topLeftPos, dir)) {
+        if (addVert(topLeftPos, dir, flip, vertSmoothnessthreshold)) {
             addUV(topLeftPos, dir, pos, topRightPos, botLeftPos, uvMode);
         }
 
@@ -166,11 +166,23 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //add a new vert with corresponding UVs if xPos,yPos does not already contain one, and add this vert's position in newVertices to vertIndicesAxes
-    bool addVert(Vector3 pos, Quaternion dir) {
-        //make sure there is not already a vertex at xPos,yPos 
-        if (getVert(pos, dir) != -1) {
-            return false;
+    bool addVert(Vector3 pos, Quaternion dir, bool flip, float vertSmoothnessthreshold) {
+        //if flipped, rotate the quaternion by 180 degrees on any axis
+        Quaternion finalDir = dir;
+        if (flip) {
+             finalDir = (new Quaternion(1,0,0,0))* finalDir;
         }
+        //make sure there are no vertices within vertSmoothnessthreshold at pos
+        if (getVert(pos, dir) != -1) {
+            Dictionary<Quaternion, int> quatKey = vertIndices[pos];
+            foreach (Quaternion key in quatKey.Keys) {
+                float angleDiff = Quaternion.Angle(dir, key);
+                if (angleDiff < vertSmoothnessthreshold) {
+                    return false;
+                }
+            }
+        }
+
         newVertices.Add(pos);
         setVert(newVertices[newVertices.Count - 1], dir, newVertices.Count - 1);
         return true;
