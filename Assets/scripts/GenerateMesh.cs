@@ -12,7 +12,7 @@ public class GenerateMesh : MonoBehaviour {
     Dictionary<Vector3, Dictionary<Quaternion, int>> vertIndices;
     Dictionary<Vector3, Dictionary<Quaternion, List<int>>> connectedVertIDs;
     Texture2D debugTex;
-    const float smoothnessFloatTolerance = .1f;
+    const float smoothnessFloatTolerance = .5f;
 
 
     void Start() {
@@ -43,7 +43,7 @@ public class GenerateMesh : MonoBehaviour {
         Vector3 pos = new Vector3(0, 0, 0);
         for (int i = 0; i < segs; ++i) {
             propagateQuad(pos, rot, width, extents, true, iterAngle); //generate back-facing quad (flipped normal)
-            pos = propagateQuad(pos,rot,width,extents,false,iterAngle); //generate forward-facing quad and update current vertex position
+            pos = propagateQuad(pos,rot,width,extents,false, iterAngle); //generate forward-facing quad and update current vertex position
             rot = rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
             extents -= .01f; //decrease segment length
         }
@@ -106,7 +106,7 @@ public class GenerateMesh : MonoBehaviour {
     
     //create an additional quad from position[] of size quadsize in direction dir (returns ending position)
     Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false, float vertSmoothnessthreshold = 0, string uvMode = "per face") {
-        Debug.Log("calling propagateQuad");
+        //Debug.Log("calling propagateQuad");
         //step 1: generate the necessary verts, and corresponding UVs
         //setup direction vector from rotation Quaternion 
         Vector3 forwardDir = dir * Vector3.forward;
@@ -187,7 +187,7 @@ public class GenerateMesh : MonoBehaviour {
             Dictionary<Quaternion, int> quatKey = vertIndices[pos];
             foreach (Quaternion key in quatKey.Keys) {
                 float angleDiff = Quaternion.Angle(dir, key);
-                Debug.Log(angleDiff);
+                //Debug.Log("add vert angle diff: " + angleDiff);
                 if (angleDiff < vertSmoothnessthreshold + smoothnessFloatTolerance) {
                     return false;
                 }
@@ -238,7 +238,7 @@ public class GenerateMesh : MonoBehaviour {
         Dictionary<Quaternion, int> quatKey = vertIndices[pos]; //check for a vertex within float tolerance
         foreach (Quaternion key in quatKey.Keys) {
             float angleDiff = Quaternion.Angle(dir, key);
-            Debug.Log("angleDiff: " + angleDiff + ", dir: " + dir + ", key: " + key);
+            //Debug.Log("angleDiff: " + angleDiff + ", dir: " + dir + ", key: " + key);
             if (angleDiff < vertSmoothnessthreshold + smoothnessFloatTolerance) {
                 return quatKey[key];
             }
@@ -282,7 +282,7 @@ public class GenerateMesh : MonoBehaviour {
         newTrianglePoints.Add(flip ? index3 : index1);
         newTrianglePoints.Add(index2);
         newTrianglePoints.Add(flip ? index1 : index3);
-        Debug.Log("index1: " + index1 + ", index2: " + index2 + ", index3: " + index3 + ", dir: " + dir);
+        //Debug.Log("index1: " + index1 + ", index2: " + index2 + ", index3: " + index3 + ", dir: " + dir);
         connectedVertIDs[newVertices[index1]] = new Dictionary<Quaternion, List<int>>();
         connectedVertIDs[newVertices[index1]][dir] = new List<int>();
         connectedVertIDs[newVertices[index1]][dir].Add(index2);
