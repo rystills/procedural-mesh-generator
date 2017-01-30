@@ -34,9 +34,9 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.Apply();
         //generateMesh("normal", 3,5);
         //generateBox(3, 5, 7);
-        List<int> spiralVerts = generateSpiral(2,1,200,8);
+        List<int> spiralVerts = generateSpiral(2,1,100,16);
         if (spiralVerts != null) {
-            displaceVerts(.2f,spiralVerts[0],spiralVerts[1]);
+            //displaceVerts(.2f,spiralVerts[0],spiralVerts[1]);
         }
         finalizeMesh();
     }
@@ -68,8 +68,8 @@ public class GenerateMesh : MonoBehaviour {
         int startVertIndex = newVertices.Count;
         float curExtents = extents;
         for (int i = 0; i < segs; ++i) {
-            propagateQuad(pos, rot, width, curExtents, true, iterAngle); //generate back-facing quad (flipped normal)
-            pos = propagateQuad(pos,rot,width, curExtents, false, iterAngle); //generate forward-facing quad and update current vertex position
+            propagateQuad(pos, rot, width, curExtents, true); //generate back-facing quad (flipped normal)
+            pos = propagateQuad(pos,rot,width, curExtents, false); //generate forward-facing quad and update current vertex position
             rot = rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
             curExtents -= (extents/segs); //decrease segment length
         }
@@ -135,7 +135,7 @@ public class GenerateMesh : MonoBehaviour {
     }
     
     //create an additional quad from position[] of size quadsize in direction dir (returns ending position)
-    Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false, float vertSmoothnessthreshold = 0, string uvMode = "planar") {
+    Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false, float vertSmoothnessthreshold = 0, string uvMode = "per face") {
         //Debug.Log("calling propagateQuad");
         //step 1: generate the necessary verts, and corresponding UVs
         //setup direction vector from rotation Quaternion 
@@ -337,6 +337,26 @@ public class GenerateMesh : MonoBehaviour {
         connectedVertIDs[newVertices[index3]][dir].Add(index2);
     }
 
+    //average the normals of verts which have the same position, to create smooth lighting
+    void averageNormals() {
+        Dictionary<Quaternion, int>[] vertGroups = vertIndices.Values.ToArray();
+        for (int i = 0; i < vertGroups.Length; ++i) { //loop over all vertices for each position
+            Dictionary<Quaternion, int> curVertGroup = vertGroups[i];
+            List<Vector3> normals = new List<Vector3>();
+            foreach (Quaternion dir in curVertGroup.Keys) { //list all of the normals for the current position
+                normals.Add(newNormals[curVertGroup[dir]]);
+            }
+            Vector3 avgNormal = new Vector3(0, 0, 0);
+            for (int r = 0; r < normals.Count; ++r) { //add up the normals
+                avgNormal += normals[r];
+            }
+            avgNormal /= normals.Count; //divide by the total number of normals to get the average
+            foreach (Quaternion dir in curVertGroup.Keys) { //replace all of the normals with the calculated average
+                newNormals[curVertGroup[dir]] = avgNormal;
+            }
+        }
+    }
+
     //simple helper method to add 3 points to the newTrianglePoints list
     void addTriAxes(int index1, int index2, int index3, bool flip = false) {
         newTrianglePoints.Add(flip ? index3 : index1);
@@ -346,6 +366,7 @@ public class GenerateMesh : MonoBehaviour {
 
     //construct the new mesh, and attach the appropriate components
     void finalizeMesh() {
+        averageNormals();
         Mesh mesh = new Mesh();
         MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
         if (!meshFilter) {
@@ -386,9 +407,9 @@ public class GenerateMesh : MonoBehaviour {
         //undulate verts based on timer and position in list
         Mesh mesh = GetComponent<MeshFilter>().mesh;
         Vector3[] vertices = mesh.vertices;
-        for (int i = 0; i < newVertices.Count; ++i) {
+        /*for (int i = 0; i < newVertices.Count; ++i) {
             vertices[i] = newVertices[i] + newNormals[i].normalized * (Mathf.Sin(2 * Time.time + i)/2);
         }
         mesh.vertices = vertices;
-    }
+    */}
 }
