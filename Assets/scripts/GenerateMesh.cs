@@ -67,27 +67,16 @@ public class GenerateMesh : MonoBehaviour {
         Vector3 rotAxis = Vector3.forward;
         Quaternion rot = new Quaternion(0, 0, 0, 1);
         Vector3 pos = new Vector3(0, 0, 0);
-        Vector3 forwardDir = rot * Vector3.forward;
-        Quaternion leftRotation = rotateQuaternion(rot, new Vector3(1, 0, 0), 90);
-        Vector3 leftDir = leftRotation * Vector3.forward;
         int startVertIndex = newVertices.Count;
-        for (int j = 0; j < height; ++j) {
-            Vector3 pos2 = pos;
-            for (int i = 0; i < length; ++i) {
-                Vector3 pos3 = pos2;
-                for (int r = 0; r < width; ++r) {
-                    propagateQuad(pos3, rot, 1, 1);
-                    pos3 += forwardDir.normalized;
-                }
-                pos2 += leftDir.normalized;
-                pos3 = pos2;
+        for (int i = 0; i < 4; ++i) { //generate a strip of 4 sides
+            pos = propagateQuad(pos, rot, 1, 1, true); //generate forward-facing quad and update current vertex position
+            rot = rotateQuaternion(rot, rotAxis, 90); //update rotation
+            if (i == 1) {
             }
-            rot = rotateQuaternion(rot, Vector3.forward, 45);
-            forwardDir = rot * Vector3.forward;
-            leftRotation = rotateQuaternion(rot, new Vector3(1, 0, 0), 90);
-            leftDir = leftRotation * Vector3.forward;
         }
-        
+        Quaternion leftRot = rotateQuaternion(rot, Vector3.up, 90);
+        propagateQuad(pos, leftRot, 1,1,false); //generate 'left' sidee
+        propagateQuad(pos + Vector3.forward.normalized, leftRot, 1,1,true); //generate 'right' side
         return new List<int> { startVertIndex, newVertices.Count - 1 };
     }
 
