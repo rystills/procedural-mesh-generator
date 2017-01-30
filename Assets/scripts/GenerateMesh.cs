@@ -13,7 +13,8 @@ public class GenerateMesh : MonoBehaviour {
     Dictionary<Vector3, Dictionary<Quaternion, int>> vertIndices;
     Dictionary<Vector3, Dictionary<Quaternion, List<int>>> connectedVertIDs;
     Texture2D debugTex;
-    const float smoothnessFloatTolerance = .5f;
+    const float smoothnessFloatTolerance = .5f; //tolerance applied to all direction comparisons to compensate for floating point imprecision
+    const float normalAverageMaxDifference = 45; //normals of overlapping vertices will not be averaged if their starting normals are larger than this value
 
     void Start() {
         //init mesh lists
@@ -33,11 +34,12 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
         //generateMesh("normal", 3,5);
-        //generateBox(3, 5, 7);
-        List<int> spiralVerts = generateSpiral(2,1,100,16);
-        if (spiralVerts != null) {
+        generateBox(2, 3, 4);
+        //generateBoxAxes(3, 5, 7);
+        //List<int> spiralVerts = generateSpiral(2,1,100,16);
+        //if (spiralVerts != null) {
             //displaceVerts(.2f,spiralVerts[0],spiralVerts[1]);
-        }
+        //}
         finalizeMesh();
     }
 
@@ -58,6 +60,35 @@ public class GenerateMesh : MonoBehaviour {
             }
         }
         throw new System.Exception();
+    }
+
+    //construct a box, with length, width, height segs
+    List<int> generateBox(float length, float width, float height) {
+        Vector3 rotAxis = Vector3.forward;
+        Quaternion rot = new Quaternion(0, 0, 0, 1);
+        Vector3 pos = new Vector3(0, 0, 0);
+        Vector3 forwardDir = rot * Vector3.forward;
+        Quaternion leftRotation = rotateQuaternion(rot, new Vector3(1, 0, 0), 90);
+        Vector3 leftDir = leftRotation * Vector3.forward;
+        int startVertIndex = newVertices.Count;
+        for (int j = 0; j < height; ++j) {
+            Vector3 pos2 = pos;
+            for (int i = 0; i < length; ++i) {
+                Vector3 pos3 = pos2;
+                for (int r = 0; r < width; ++r) {
+                    propagateQuad(pos3, rot, 1, 1);
+                    pos3 += forwardDir.normalized;
+                }
+                pos2 += leftDir.normalized;
+                pos3 = pos2;
+            }
+            rot = rotateQuaternion(rot, Vector3.forward, 45);
+            forwardDir = rot * Vector3.forward;
+            leftRotation = rotateQuaternion(rot, new Vector3(1, 0, 0), 90);
+            leftDir = leftRotation * Vector3.forward;
+        }
+        
+        return new List<int> { startVertIndex, newVertices.Count - 1 };
     }
 
     //construct a spiral, with segs quads of width, extents, rotating each quad by iterAngle
@@ -85,7 +116,7 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //construct a closed box, with length, width, height segments; adapted from generateMesh
-    void generateBox(int length, int width, int height) {
+    void generateBoxAxes(int length, int width, int height) {
         float quadSize = 1;
         string[] allAxes = { "x", "y", "z" };
         int[] allDims = { length, width, height };
@@ -108,7 +139,7 @@ public class GenerateMesh : MonoBehaviour {
                 }
             }
         }
-        finalizeMesh();
+        finalizeMesh(true);
     }
 
     // construct a flat mxn rectangular mesh (m = x segments, n = y segments)
@@ -235,7 +266,7 @@ public class GenerateMesh : MonoBehaviour {
         if (uvMode == "per face") {
             newUVs.Add(pos == a ? new Vector2(0, 0) : pos == b ? new Vector2(0, 1) : pos == c ? new Vector2(1, 0) : new Vector2(1, 1));
         }
-        else if (uvMode == "planar") {
+        else if (uvMode == "per face merge duplicates") {
             int id = vertIndices[pos][dir];
             if (id <= 3) {
                 id = 0;
@@ -338,7 +369,7 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //average the normals of verts which have the same position, to create smooth lighting
-    void averageNormals() {
+    void averageNormals() { //todo: modify me to use smoothing constant to avoid averaging normals which should be separate from one another
         Dictionary<Quaternion, int>[] vertGroups = vertIndices.Values.ToArray();
         for (int i = 0; i < vertGroups.Length; ++i) { //loop over all vertices for each position
             Dictionary<Quaternion, int> curVertGroup = vertGroups[i];
@@ -365,8 +396,8 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //construct the new mesh, and attach the appropriate components
-    void finalizeMesh() {
-        averageNormals();
+    void finalizeMesh(bool useUnityNormals = false) {
+        
         Mesh mesh = new Mesh();
         MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
         if (!meshFilter) {
@@ -377,8 +408,13 @@ public class GenerateMesh : MonoBehaviour {
         mesh.triangles = newTrianglePoints.ToArray();
         mesh.uv = newUVs.ToArray();
         meshFilter.mesh.RecalculateBounds();
-        meshFilter.mesh.normals = newNormals.ToArray();
-        //meshFilter.mesh.RecalculateNormals();
+        if (useUnityNormals) {
+            meshFilter.mesh.RecalculateNormals();
+        }
+        else {
+            averageNormals();
+            meshFilter.mesh.normals = newNormals.ToArray();
+        }
         MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
         if (!meshRenderer) {
             meshRenderer = gameObject.AddComponent<MeshRenderer>();
