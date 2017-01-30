@@ -66,11 +66,12 @@ public class GenerateMesh : MonoBehaviour {
         Quaternion rot = new Quaternion(0,0,0,1);
         Vector3 pos = new Vector3(0, 0, 0);
         int startVertIndex = newVertices.Count;
+        float curExtents = extents;
         for (int i = 0; i < segs; ++i) {
-            propagateQuad(pos, rot, width, extents, true, iterAngle); //generate back-facing quad (flipped normal)
-            pos = propagateQuad(pos,rot,width,extents,false, iterAngle); //generate forward-facing quad and update current vertex position
+            propagateQuad(pos, rot, width, curExtents, true, iterAngle); //generate back-facing quad (flipped normal)
+            pos = propagateQuad(pos,rot,width, curExtents, false, iterAngle); //generate forward-facing quad and update current vertex position
             rot = rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
-            extents -= .005f; //decrease segment length
+            curExtents -= (extents/segs); //decrease segment length
         }
         if (segs == 0 || startVertIndex == newVertices.Count) { //if we didnt make any new verts, return an empty list
             return null;
@@ -134,7 +135,7 @@ public class GenerateMesh : MonoBehaviour {
     }
     
     //create an additional quad from position[] of size quadsize in direction dir (returns ending position)
-    Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false, float vertSmoothnessthreshold = 0, string uvMode = "per face") {
+    Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false, float vertSmoothnessthreshold = 0, string uvMode = "planar") {
         //Debug.Log("calling propagateQuad");
         //step 1: generate the necessary verts, and corresponding UVs
         //setup direction vector from rotation Quaternion 
@@ -233,6 +234,16 @@ public class GenerateMesh : MonoBehaviour {
         newNormals.Add(calculateNormal(a, c, b));
         if (uvMode == "per face") {
             newUVs.Add(pos == a ? new Vector2(0, 0) : pos == b ? new Vector2(0, 1) : pos == c ? new Vector2(1, 0) : new Vector2(1, 1));
+        }
+        else if (uvMode == "planar") {
+            int id = vertIndices[pos][dir];
+            if (id <= 3) {
+                id = 0;
+            }
+            else {
+                id = ((int)((id - 2) / 2));
+            }
+            newUVs.Add(pos == a ? new Vector2(id, id) : pos == b ? new Vector2(id, id+1) : pos == c ? new Vector2(id+1, id) : new Vector2(id+1, id+1));
         }
     }
 
@@ -373,11 +384,11 @@ public class GenerateMesh : MonoBehaviour {
         //Debug.Log(gameObject.transform.forward);
 
         //undulate verts based on timer and position in list
-        for (int i = 0; i < newVertices.Count; ++i) {
-            newVertices[i] += (newNormals[i].normalized * Mathf.Sin(Time.time + (i/10)));
-        }
         Mesh mesh = GetComponent<MeshFilter>().mesh;
-        mesh.vertices = newVertices.ToArray();
-
+        Vector3[] vertices = mesh.vertices;
+        for (int i = 0; i < newVertices.Count; ++i) {
+            vertices[i] = newVertices[i] + newNormals[i].normalized * (Mathf.Sin(2 * Time.time + i)/2);
+        }
+        mesh.vertices = vertices;
     }
 }
