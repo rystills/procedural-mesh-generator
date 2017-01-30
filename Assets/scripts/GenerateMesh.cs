@@ -34,7 +34,8 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
         //generateMesh("normal", 3,5);
-        generateBox(2, 3, 4);
+        List<int> boxVerts = generateBox(2, 3, 4);
+        displaceVerts(.2f, boxVerts[0], boxVerts[1]);
         //generateBoxAxes(3, 5, 7);
         //List<int> spiralVerts = generateSpiral(2,1,100,16);
         //if (spiralVerts != null) {
@@ -46,8 +47,15 @@ public class GenerateMesh : MonoBehaviour {
     //apply a random displacement between -maxDisp and +maxDisp from vert startIndex to vert endIndex (both inclusive)
     void displaceVerts(float maxDisp, int startIndex, int endIndex) {
         //finalizeMesh(); //finalize mesh to get current normals
+        Debug.Log(vertIndices.Count());
+        Dictionary<Vector3, float> vertPosDiplacements = new Dictionary<Vector3, float>();
         for (int i = startIndex; i <= endIndex; ++i) {
-            float curDisp = Random.Range(-1 * maxDisp, maxDisp);
+            float curDisp;
+            if (!vertPosDiplacements.ContainsKey(newVertices[i])) {
+                vertPosDiplacements[newVertices[i]] = Random.Range(-1 * maxDisp, maxDisp);
+
+            }
+            curDisp = vertPosDiplacements[newVertices[i]];
             newVertices[i] += (newNormals[i].normalized * curDisp);
         }
     }
@@ -64,16 +72,15 @@ public class GenerateMesh : MonoBehaviour {
 
     //construct a box, with length, width, height segs
     List<int> generateBox(float length, float width, float height) {
+        int startVertIndex = newVertices.Count;
         Vector3 rotAxis = Vector3.forward;
         Quaternion rot = new Quaternion(0, 0, 0, 1);
         Vector3 pos = new Vector3(0, 0, 0);
-        int startVertIndex = newVertices.Count;
         for (int i = 0; i < 4; ++i) { //generate a strip of 4 sides
             pos = propagateQuad(pos, rot, 1, 1, true); //generate forward-facing quad and update current vertex position
             rot = rotateQuaternion(rot, rotAxis, 90); //update rotation
-            if (i == 1) {
-            }
         }
+        Debug.Log(vertIndices.Count());
         Quaternion leftRot = rotateQuaternion(rot, Vector3.up, 90);
         propagateQuad(pos, leftRot, 1,1,false); //generate 'left' sidee
         propagateQuad(pos + Vector3.forward.normalized, leftRot, 1,1,true); //generate 'right' side
@@ -82,10 +89,10 @@ public class GenerateMesh : MonoBehaviour {
 
     //construct a spiral, with segs quads of width, extents, rotating each quad by iterAngle
     List<int> generateSpiral(float width, float extents, int segs, float iterAngle) {
+        int startVertIndex = newVertices.Count;
         Vector3 rotAxis = Vector3.forward;
         Quaternion rot = new Quaternion(0,0,0,1);
         Vector3 pos = new Vector3(0, 0, 0);
-        int startVertIndex = newVertices.Count;
         float curExtents = extents;
         for (int i = 0; i < segs; ++i) {
             propagateQuad(pos, rot, width, curExtents, true); //generate back-facing quad (flipped normal)
@@ -358,7 +365,7 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //average the normals of verts which have the same position, to create smooth lighting
-    void averageNormals() { //todo: modify me to use smoothing constant to avoid averaging normals which should be separate from one another
+    void averageNormals() {
         Dictionary<Quaternion, int>[] vertGroups = vertIndices.Values.ToArray();
         for (int i = 0; i < vertGroups.Length; ++i) { //loop over all vertices for each position
             Dictionary<Quaternion, int> curVertGroup = vertGroups[i];
