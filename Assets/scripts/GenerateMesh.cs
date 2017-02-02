@@ -34,10 +34,10 @@ public class GenerateMesh : MonoBehaviour {
         debugTex.wrapMode = TextureWrapMode.Repeat;
         debugTex.Apply();
         //generateMesh("normal", 3,5);
-        List<int> boxVerts = generateBox(2, 3, 4);
-        displaceVerts(.2f, boxVerts[0], boxVerts[1]);
+        //List<int> verts = generateBox(2, 3, 4);
+        List<int> verts = generateSpiral(2, 1, 100, 16);
+        displaceVerts(.2f, verts[0], verts[1]);
         //generateBoxAxes(3, 5, 7);
-        //List<int> spiralVerts = generateSpiral(2,1,100,16);
         //if (spiralVerts != null) {
             //displaceVerts(.2f,spiralVerts[0],spiralVerts[1]);
         //}
@@ -174,17 +174,17 @@ public class GenerateMesh : MonoBehaviour {
         Vector3 topLeftPos = botLeftPos + (forwardDir.normalized * width);
         //generate 2 verts for first side
         if (addVert(pos, dir, flip, vertSmoothnessthreshold)) {
-            addUV(pos, dir, pos, topRightPos, botLeftPos, uvMode);
+            addUV(pos, dir, pos, topRightPos, botLeftPos, uvMode, flip);
         }
         if (addVert(topRightPos, dir, flip, vertSmoothnessthreshold)) {
-            addUV(topRightPos, dir, pos, topRightPos, botLeftPos, uvMode);
+            addUV(topRightPos, dir, pos, topRightPos, botLeftPos, uvMode, flip);
         }
         //generate 2 verts for second sdie
         if (addVert(botLeftPos, dir, flip, vertSmoothnessthreshold)) {
-            addUV(botLeftPos, dir, pos, topRightPos, botLeftPos, uvMode);
+            addUV(botLeftPos, dir, pos, topRightPos, botLeftPos, uvMode, flip);
         }
         if (addVert(topLeftPos, dir, flip, vertSmoothnessthreshold)) {
-            addUV(topLeftPos, dir, pos, topRightPos, botLeftPos, uvMode);
+            addUV(topLeftPos, dir, pos, topRightPos, botLeftPos, uvMode, flip);
         }
 
         //step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
@@ -257,7 +257,13 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     //calculate UV for point pos given points a,b,c (pos will typically be equivalent to one of these 3 points)
-    void addUV(Vector3 pos, Quaternion dir, Vector3 a, Vector3 b, Vector3 c, string uvMode) {
+    void addUV(Vector3 pos, Quaternion dir, Vector3 a, Vector3 b, Vector3 c, string uvMode, bool flip = false) {
+		if (flip) { //change the vertex order when flipping, so that normals are flipped as well
+			Vector3 d = c;
+			c = b;
+			b = d;
+		}
+
         newNormals.Add(calculateNormal(a, c, b));
         if (uvMode == "per face") {
             newUVs.Add(pos == a ? new Vector2(0, 0) : pos == b ? new Vector2(0, 1) : pos == c ? new Vector2(1, 0) : new Vector2(1, 1));

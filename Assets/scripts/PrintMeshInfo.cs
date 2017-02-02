@@ -8,8 +8,10 @@ public class PrintMeshInfo : MonoBehaviour {
 	void Start () {
         MeshFilter mf = gameObject.GetComponent<MeshFilter>();
         Vector2[] uvs = mf.mesh.uv;
-        for (int i = 0; i < uvs.Length; ++i) {
-            Debug.Log(uvs[i]);
+        Vector3[] verts = mf.mesh.vertices;
+        for (int i = 0; i < verts.Length; ++i) {
+            //Debug.Log(uvs[i]);
+            Debug.Log(verts[i]);
         }
 	}
 }
