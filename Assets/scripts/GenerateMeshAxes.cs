@@ -11,7 +11,6 @@ public class GenerateMeshAxes : MonoBehaviour {
 	List<int> newTrianglePoints;
 	List<Vector2> newUVs;
 	Dictionary<Vector3, Dictionary<string[], int>> vertIndicesAxes;
-	Dictionary<Vector3, Dictionary<Quaternion, int>> vertIndices;
 	Dictionary<Vector3, Dictionary<Quaternion, List<int>>> connectedVertIDs;
 	Texture2D debugTex;
 	const float smoothnessFloatTolerance = .5f; //tolerance applied to all direction comparisons to compensate for floating point imprecision
@@ -24,7 +23,6 @@ public class GenerateMeshAxes : MonoBehaviour {
 		newTrianglePoints = new List<int>();
 		newUVs = new List<Vector2>();
 		vertIndicesAxes = new Dictionary<Vector3, Dictionary<string[], int>>();
-		vertIndices = new Dictionary<Vector3, Dictionary<Quaternion, int>>();
 		connectedVertIDs = new Dictionary<Vector3, Dictionary<Quaternion, List<int>>>();
 		//build debug texture as a fallback if no material is supplied
 		debugTex = new Texture2D(2, 2);
