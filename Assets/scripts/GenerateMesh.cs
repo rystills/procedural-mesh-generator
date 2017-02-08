@@ -5,24 +5,22 @@ using System.Linq;
 
 public class GenerateMesh : MonoBehaviour {
     public Material material;
-    List<Vector3> vertices;
-    List<Vector3> normals;
     List<int> triangles;
-    List<Vector2> uvs;
-    Dictionary<Vector3, Dictionary<Quaternion, int>> vertIndices;
-    Dictionary<Vector3, Dictionary<Quaternion, List<int>>> connectedVertIDs;
+	VertexDict vertDict;
+	List<Vector3> vertices;
+	List<Vector2> uvs;
+	List<Vector3> normals;
     Texture2D debugTex;
-    const float smoothnessFloatTolerance = .5f; //tolerance applied to all direction comparisons to compensate for floating point imprecision
-    const float normalAverageMaxDifference = 45; //normals of overlapping vertices will not be averaged if their starting normals are larger than this value
+	const float smoothnessFloatTolerance = .1f; //tolerance applied to all direction comparisons to compensate for floating point imprecision
+	const float normalAverageMaxDifference = 45; //normals of overlapping vertices will not be averaged if their starting normals are larger than this value
 
     void Start() {
-        //init mesh lists
-        vertices = new List<Vector3>();
-        normals = new List<Vector3>();
-        triangles = new List<int>();
+		//new mesh lists
+		triangles = new List<int>();
+		vertDict = new VertexDict();
+		vertices = new List<Vector3>();
         uvs = new List<Vector2>();
-        vertIndices = new Dictionary<Vector3, Dictionary<Quaternion, int>>();
-        connectedVertIDs = new Dictionary<Vector3, Dictionary<Quaternion, List<int>>>();
+		normals = new List<Vector3>();
         //build debug texture as a fallback if no material is supplied
         debugTex = new Texture2D(2, 2);
         debugTex.SetPixel(0, 0, Color.red);
@@ -49,14 +47,12 @@ public class GenerateMesh : MonoBehaviour {
 	}
 
 	//find and return the rotation of the vertex which corresponds to vertIndex
-	Quaternion getVertRotation(int vertIndex) {
-		Dictionary<Quaternion, int> curVertCandidates = vertIndices[vertices[vertIndex]];
-		foreach (Quaternion dir in curVertCandidates.Keys) {
-			if (curVertCandidates[dir] == vertIndex) {
-				return dir;
-			}
+	VertexData getVertData(int vertIndex) {
+		VertexData vert = vertDict.getVert(vertices[vertIndex],normals[vertIndex]);
+		if (vert != null) {
+			return vert;
 		}
-		throw new System.Exception();
+		throw new System.Exception("error: vertex #" + vertIndex + " not found in vertDict");
 	}
 
 	//return the normal vector between vectors a,b,c
