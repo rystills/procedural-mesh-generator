@@ -22,45 +22,48 @@ public class VertexDict {
 
 	//get all vertices at position pos, regardless of normal dir
 	public VertexData[] getVerts(Vector3 pos) {
-		return verts[pos].Values.ToArray();
+		return getVertDict(pos).Values.ToArray();
 	}
 
 	//add a vert at position pos with normal normal
 	public VertexData addVert(int verticesIndex, Vector3 pos, Vector3 normal, List<int> trianglesIndices = null) {
-		Vector3 roundedPos = roundVector(ref pos);
-		if (!verts.ContainsKey(roundedPos)) {
-			verts[roundedPos] = new Dictionary<Quaternion, VertexData>();
+		Dictionary<Quaternion, VertexData> vertDict = getVertDict(pos);
+		if (vertDict == null) {
+			vertDict = new Dictionary<Quaternion, VertexData>();
+			verts[roundVector(ref pos)] = vertDict;
 		}
 		VertexData newVert = new VertexData(verticesIndex, trianglesIndices);
-		verts[roundedPos][Quaternion.Euler(normal.x, normal.y, normal.z)] = newVert;
+		vertDict[Quaternion.Euler(normal.x, normal.y, normal.z)] = newVert;
 		return newVert;
 	}
 
-	//get vertex at position pos with normal normal
-	public VertexData getVert(Vector3 pos, Vector3 normal) {
+	//given Vector3 pos, check if vertex exists at this position within rounding tolerance
+	public Dictionary<Quaternion, VertexData> getVertDict(Vector3 pos) {
 		//check if rounded position is a valid key first
 		Vector3 roundedPos = roundVector(ref pos);
-		Dictionary<Quaternion, VertexData> quatKey = null;
 		if (verts.ContainsKey(roundedPos)) {
-			quatKey = verts[roundedPos];
+			return verts[roundedPos];
 		}
-		else {
-			//check if the position iterated one time in any of the axes is a valid key
-			Vector3 curPos;
-			float incrementAmount = (float)Math.Pow(10, -1 * smoothnessFloatDigits);
-			for (int i = -1; i <= 1; ++i) {
-				for (int r = -1; r <= 1; ++r) {
-					for (int j = -1; j <= 1; ++j) {
-						curPos = new Vector3(roundedPos.x + incrementAmount * i, roundedPos.y + incrementAmount * i, roundedPos.z + incrementAmount * i);
-						if (verts.ContainsKey(curPos)) {
-							quatKey = verts[curPos];
-							i = r = j = 2; //break out of all 3 loops
-						}
+		//check if the position iterated up to one time in any of the axes is a valid key
+		float incrementAmount = (float)Math.Pow(10, -1 * smoothnessFloatDigits);
+		for (int i = -1; i <= 1; ++i) {
+			for (int r = -1; r <= 1; ++r) {
+				for (int j = -1; j <= 1; ++j) {
+					Vector3 curPos = new Vector3(roundedPos.x + incrementAmount * i, roundedPos.y + incrementAmount * i, roundedPos.z + incrementAmount * i);
+					if (verts.ContainsKey(curPos)) {
+						return verts[curPos];
 					}
 				}
 			}
 		}
-		if (quatKey == null) { //no vector could be found at this position
+		//no vector could be found at this position
+		return null;
+	}
+
+	//get vertex at position pos with normal normal
+	public VertexData getVert(Vector3 pos, Vector3 normal) {
+		Dictionary<Quaternion, VertexData> vertDict = getVertDict(pos);
+		if (vertDict == null) { //vector not found at position pos
 			return null;
 		}
 
@@ -68,7 +71,7 @@ public class VertexDict {
 		bool foundCandidate = false;
 		Quaternion smallestKey = Quaternion.identity;
 		float smallestDiff = smoothnessFloatTolerance;
-		foreach (Quaternion key in quatKey.Keys) {
+		foreach (Quaternion key in vertDict.Keys) {
 			float angleDiff = Quaternion.Angle(Quaternion.Euler(normal.x,normal.y,normal.z), key);
 			if (angleDiff <= smallestDiff) {
 				smallestDiff = angleDiff;
@@ -77,7 +80,7 @@ public class VertexDict {
 			}
 		}
 		if (foundCandidate) {
-			return quatKey[smallestKey];
+			return vertDict[smallestKey];
 		}
 		return null; //a vector was found at this position, but no matching normal within tolerance was found at that position
 	}
