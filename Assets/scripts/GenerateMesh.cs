@@ -97,13 +97,16 @@ public class GenerateMesh : MonoBehaviour {
         return new List<int> { startVertIndex, vertices.Count - 1 };
     }
 
-	//apply a random displacement between -maxDisp and +maxDisp from vert startIndex to vert endIndex (both inclusive)
+	//apply a random displacement between -maxDisp and +maxDisp from vert startIndex to vert endIndex (both inclusive) - for simplicity, each vertex uses the normal of the first vert in its group
 	void displaceVerts(float maxDisp, int startIndex, int endIndex) {
 		foreach (Dictionary<Quaternion,VertexData> dict in vertDict.verts.Values) {
 			float curDisp = Random.Range(-1 * maxDisp, maxDisp);
 			VertexData[] curVerts = dict.Values.ToArray();
 			for (int i = 0; i < curVerts.Length; ++i) {
-				vertices[curVerts[i].verticesIndex] += (normals[i].normalized * curDisp);
+				if (!(startIndex <= curVerts[i].verticesIndex && curVerts[i].verticesIndex <= endIndex)) {
+					continue;
+				}
+				vertices[curVerts[i].verticesIndex] += (normals[curVerts[0].verticesIndex].normalized * curDisp);
 			}
 		}
 	}
@@ -280,12 +283,16 @@ public class GenerateMesh : MonoBehaviour {
     }
 
     void Update() {
-        //undulate verts based on timer and position in list
-        /*Mesh mesh = GetComponent<MeshFilter>().mesh;
-        Vector3[] vertices = mesh.vertices;
-        for (int i = 0; i < vertices.Length; ++i) {
-            vertices[i] = vertices[i] + normals[i].normalized * (Mathf.Sin(2 * Time.time + i)/100);
-        }
-        mesh.vertices = vertices;*/
+		//wave vert groups by the first vert's normal for the sake of simplicity
+		int count = 0;
+		foreach (Dictionary<Quaternion, VertexData> dict in vertDict.verts.Values) {
+			VertexData[] curVerts = dict.Values.ToArray();
+			for (int i = 0; i < curVerts.Length; ++i) {
+				vertices[curVerts[i].verticesIndex] = vertices[curVerts[i].verticesIndex] + normals[curVerts[0].verticesIndex].normalized * (Mathf.Sin(2 * Time.time + count) / 400);
+			}
+			++count;
+		}
+		Mesh mesh = GetComponent<MeshFilter>().mesh;
+		mesh.vertices = vertices.ToArray();
     }
 }
