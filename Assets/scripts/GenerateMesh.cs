@@ -11,8 +11,6 @@ public class GenerateMesh : MonoBehaviour {
 	List<Vector2> uvs;
 	List<Vector3> normals;
     Texture2D debugTex;
-	const float smoothnessFloatTolerance = .1f; //tolerance applied to all direction comparisons to compensate for floating point imprecision
-	const float normalAverageMaxDifference = 45; //normals of overlapping vertices will not be averaged if their starting normals are larger than this value
 
     void Start() {
 		//new mesh lists
@@ -71,11 +69,10 @@ public class GenerateMesh : MonoBehaviour {
 		Quaternion rot = new Quaternion(0, 0, 0, 1);
 		Vector3 pos = new Vector3(0, 0, 0);
 		float curExtents = extents;
-		for (int i = 0; i < segs; ++i) {
+		for (int i = 0; i < segs; ++i, curExtents -= extents / segs) { //decrease segment length after each iteration
 			propagateQuad(pos, rot, width, curExtents, true); //generate back-facing quad (flipped normal)
 			pos = propagateQuad(pos, rot, width, curExtents, false); //generate forward-facing quad and update current vertex position
 			rot = rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
-			curExtents -= (extents / segs); //decrease segment length
 		}
 		if (segs == 0 || startVertIndex == vertices.Count) { //if we didnt make any new verts, return an empty list
 			return null;
@@ -94,7 +91,6 @@ public class GenerateMesh : MonoBehaviour {
             pos = propagateQuad(pos, rot, 1, 1, true); //generate forward-facing quad and update current vertex position
             rot = rotateQuaternion(rot, rotAxis, 90); //update rotation
         }
-        Debug.Log(vertIndices.Count());
         Quaternion leftRot = rotateQuaternion(rot, Vector3.up, 90);
         propagateQuad(pos, leftRot, 1,1,false); //generate 'left' sidee
         propagateQuad(pos + Vector3.forward.normalized, leftRot, 1,1,true); //generate 'right' side
@@ -103,17 +99,12 @@ public class GenerateMesh : MonoBehaviour {
 
 	//apply a random displacement between -maxDisp and +maxDisp from vert startIndex to vert endIndex (both inclusive)
 	void displaceVerts(float maxDisp, int startIndex, int endIndex) {
-		//finalizeMesh(); //finalize mesh to get current normals
-		Debug.Log(vertIndices.Count());
-		Dictionary<Vector3, float> vertPosDiplacements = new Dictionary<Vector3, float>();
-		for (int i = startIndex; i <= endIndex; ++i) {
-			float curDisp;
-			if (!vertPosDiplacements.ContainsKey(vertices[i])) {
-				vertPosDiplacements[vertices[i]] = Random.Range(-1 * maxDisp, maxDisp);
-
+		foreach (Dictionary<Quaternion,VertexData> dict in vertDict.verts.Values) {
+			float curDisp = Random.Range(-1 * maxDisp, maxDisp);
+			VertexData[] curVerts = dict.Values.ToArray();
+			for (int i = 0; i < curVerts.Length; ++i) {
+				vertices[curVerts[i].verticesIndex] += (normals[i].normalized * curDisp);
 			}
-			curDisp = vertPosDiplacements[vertices[i]];
-			vertices[i] += (normals[i].normalized * curDisp);
 		}
 	}
 
@@ -202,7 +193,7 @@ public class GenerateMesh : MonoBehaviour {
             foreach (Quaternion key in quatKey.Keys) {
                 float angleDiff = Quaternion.Angle(dir, key);
                 //Debug.Log("add vert angle diff: " + angleDiff);
-                if (angleDiff < vertSmoothnessthreshold + smoothnessFloatTolerance) {
+                if (angleDiff < vertSmoothnessthreshold + VertexDict.smoothnessFloatTolerance) {
                     return false;
                 }
             }
@@ -230,7 +221,7 @@ public class GenerateMesh : MonoBehaviour {
 		foreach (Quaternion key in quatKey.Keys) {
 			float angleDiff = Quaternion.Angle(dir, key);
 			//Debug.Log("angleDiff: " + angleDiff + ", dir: " + dir + ", key: " + key);
-			if (angleDiff < vertSmoothnessthreshold + smoothnessFloatTolerance) {
+			if (angleDiff < vertSmoothnessthreshold + VertexDict.smoothnessFloatTolerance) {
 				return quatKey[key];
 			}
 		}
