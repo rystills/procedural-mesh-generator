@@ -217,22 +217,17 @@ public class GenerateMesh : MonoBehaviour {
 	//normal modifiers
     //average the normals of verts which have the same position, to create smooth lighting
     void averageNormals() {
-        Dictionary<Quaternion, int>[] vertGroups = vertIndices.Values.ToArray();
-        for (int i = 0; i < vertGroups.Length; ++i) { //loop over all vertices for each position
-            Dictionary<Quaternion, int> curVertGroup = vertGroups[i];
-            List<Vector3> normals = new List<Vector3>();
-            foreach (Quaternion dir in curVertGroup.Keys) { //list all of the normals for the current position
-                normals.Add(normals[curVertGroup[dir]]);
-            }
-            Vector3 avgNormal = new Vector3(0, 0, 0);
-            for (int r = 0; r < normals.Count; ++r) { //add up the normals
-                avgNormal += normals[r];
-            }
-            avgNormal /= normals.Count; //divide by the total number of normals to get the average
-            foreach (Quaternion dir in curVertGroup.Keys) { //replace all of the normals with the calculated average
-                normals[curVertGroup[dir]] = avgNormal;
-            }
-        }
+		foreach (Dictionary<Quaternion, VertexData> dict in vertDict.verts.Values) { //loop over all verts in each group
+			VertexData[] curVerts = dict.Values.ToArray();
+			Vector3 avgNormal = new Vector3(0, 0, 0);
+			for (int i = 0; i < curVerts.Length; ++i) { //calculate average normal
+				avgNormal += normals[curVerts[i].verticesIndex];
+			}
+			avgNormal /= curVerts.Count();
+			for (int i = 0; i < curVerts.Length; ++i) { //set each normal to average
+				normals[curVerts[i].verticesIndex] = avgNormal;
+			}
+		}
     }
 
     //construct the new mesh, and attach the appropriate components
