@@ -219,6 +219,8 @@ public class GenerateMesh : MonoBehaviour {
     void averageNormals() {
 		foreach (Dictionary<Quaternion, VertexData> dict in vertDict.verts.Values) { //loop over all verts in each group
 			VertexData[] curVerts = dict.Values.ToArray();
+			Vector3[] newNormals = new Vector3[curVerts.Length];
+			int[] newVertsAveraged = new int[curVerts.Length];
 			for (int r = 0; r < curVerts.Length; ++r) { //loop over all other verts and average with this vert if within max normal difference
 				Vector3 avgNormal = new Vector3(0, 0, 0);
 				int vertsAveraged = 0;
@@ -228,7 +230,11 @@ public class GenerateMesh : MonoBehaviour {
 						vertsAveraged++;
 					}
 				}
-				normals[curVerts[r].verticesIndex] = avgNormal / vertsAveraged;
+				newNormals[r] = avgNormal / vertsAveraged;
+				newVertsAveraged[r] = vertsAveraged;
+			}
+			for (int i = 0; i < newNormals.Length; ++i) { //apply all new normals at the end, so later normal calculations are not swayed by earlier normal calculations
+				normals[curVerts[i].verticesIndex] = newNormals[i] / newVertsAveraged[i];
 			}
 			
 		}
