@@ -111,138 +111,99 @@ public class GenerateMesh : MonoBehaviour {
 	//core generators  
 	//create an additional quad from position[] of size quadsize in direction dir (returns ending position)
 	Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false, float vertSmoothnessthreshold = 0, string uvMode = "per face") {
-        //Debug.Log("calling propagateQuad");
         //step 1: generate the necessary verts, and corresponding UVs
-        //setup direction vector from rotation Quaternion 
+        //calculate forward and left vectors from rotation Quaternion 
         Vector3 forwardDir = dir * Vector3.forward;
-        Vector3 topRightPos = pos + (forwardDir.normalized * width);
         Quaternion leftRotation = rotateQuaternion(dir, new Vector3(1, 0, 0), 90);
         Vector3 leftDir = leftRotation * Vector3.forward;
-        Vector3 botLeftPos = pos + (leftDir.normalized * extents);
+
+		//calculate 3 remaining positions from forward and left vectors
+		Vector3 topRightPos = pos + (forwardDir.normalized * width);
+		Vector3 botLeftPos = pos + (leftDir.normalized * extents);
         Vector3 topLeftPos = botLeftPos + (forwardDir.normalized * width);
-        //generate 2 verts for first side
-        if (addVert(pos, dir, flip, vertSmoothnessthreshold)) {
-            addUV(pos, dir, pos, topRightPos, botLeftPos, uvMode, flip);
-        }
-        if (addVert(topRightPos, dir, flip, vertSmoothnessthreshold)) {
-            addUV(topRightPos, dir, pos, topRightPos, botLeftPos, uvMode, flip);
-        }
-        //generate 2 verts for second sdie
-        if (addVert(botLeftPos, dir, flip, vertSmoothnessthreshold)) {
-            addUV(botLeftPos, dir, pos, topRightPos, botLeftPos, uvMode, flip);
-        }
-        if (addVert(topLeftPos, dir, flip, vertSmoothnessthreshold)) {
-            addUV(topLeftPos, dir, pos, topRightPos, botLeftPos, uvMode, flip);
-        }
+
+		//calculate normal dir
+		Vector3 normal;
+		if (flip) {
+			normal = calculateNormal(pos, topRightPos, botLeftPos);
+		}
+		else {
+			normal = calculateNormal(pos, botLeftPos, topRightPos);
+		}
+		
+		//generate botRight vert
+		VertexData botRightVert = vertDict.getVert(pos, normal);
+		if (botRightVert == null) {
+			botRightVert = addVert(pos, normal, vertSmoothnessthreshold);
+			addUV(botRightVert, pos, topRightPos, botLeftPos, uvMode, flip);
+		}
+		//generate topRight vert
+		VertexData topRightVert = vertDict.getVert(topRightPos, normal);
+		if (topRightVert == null) {
+			topRightVert = addVert(topRightPos, normal, vertSmoothnessthreshold);
+			addUV(topRightVert, pos, topRightPos, botLeftPos, uvMode, flip);
+		}
+		//generate botLeft vert
+		VertexData botLeftVert = vertDict.getVert(botLeftPos, normal);
+		if (botLeftVert == null) {
+			botLeftVert = addVert(botLeftPos, normal, vertSmoothnessthreshold);
+			addUV(botLeftVert, pos, topRightPos, botLeftPos, uvMode, flip);
+		}
+		//generate topLeft vert
+		VertexData topLeftVert = vertDict.getVert(topLeftPos, normal);
+		if (topLeftVert == null) {
+			topLeftVert= addVert(topLeftPos, normal, vertSmoothnessthreshold);
+			addUV(topLeftVert, pos, topRightPos, botLeftPos, uvMode, flip);
+		}
 
         //step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
-        int topLeftIndex = getVert(topLeftPos, dir, vertSmoothnessthreshold);
-        topLeftIndex = topLeftIndex == -1 ? getVert(topLeftPos, flipQuaternion(dir), vertSmoothnessthreshold) : topLeftIndex;
-        int botLeftIndex = getVert(botLeftPos, dir, vertSmoothnessthreshold);
-        botLeftIndex = botLeftIndex == -1 ? getVert(botLeftPos, flipQuaternion(dir), vertSmoothnessthreshold) : botLeftIndex;
-        int topRightIndex = getVert(topRightPos, dir, vertSmoothnessthreshold);
-        topRightIndex = topRightIndex == -1 ? getVert(topRightPos, flipQuaternion(dir), vertSmoothnessthreshold) : topRightIndex;
-        int botRightIndex = getVert(pos, dir, vertSmoothnessthreshold);
-        botRightIndex = botRightIndex == -1 ? getVert(pos, flipQuaternion(dir), vertSmoothnessthreshold) : botRightIndex;
-        //first new tri
-        addTri(botRightIndex, topRightIndex, botLeftIndex, dir, flip);
-        //second new tri
-        addTri(topRightIndex, topLeftIndex, botLeftIndex, dir, flip);
+		addQuad(botRightVert.verticesIndex, topRightVert.verticesIndex, botLeftVert.verticesIndex, topLeftVert.verticesIndex, dir, flip);
         return botLeftPos;
     }
 
 	//tri modifiers
+	//simple helper method to add two tris with the same normal, forming a single quad (recommended in most cases)
+	void addQuad(int botRightIndex, int topRightIndex, int botLeftIndex, int topLeftIndex, Quaternion dir, bool flip) {
+		//first new tri
+		addTri(botRightIndex, topRightIndex, botLeftIndex, dir, flip);
+		//second new tri
+		addTri(topRightIndex, topLeftIndex, botLeftIndex, dir, flip);
+	}
 	//simple helper method to add 3 points to the triangles list
 	void addTri(int index1, int index2, int index3, Quaternion dir, bool flip = false) {
 		triangles.Add(flip ? index3 : index1);
 		triangles.Add(index2);
 		triangles.Add(flip ? index1 : index3);
-		//Debug.Log("index1: " + index1 + ", index2: " + index2 + ", index3: " + index3 + ", dir: " + dir);
-		addConnectedVerts(index1,index2,index3,dir);
 	}
 
 	//vert modifiers
-	//add indices of newly added tri verts to connectedVertIDs dictionary 
-	void addConnectedVerts(int index1, int index2, int index3, Quaternion dir) {
-		connectedVertIDs[vertices[index1]] = new Dictionary<Quaternion, List<int>>();
-		connectedVertIDs[vertices[index1]][dir] = new List<int>();
-		connectedVertIDs[vertices[index1]][dir].Add(index2);
-		connectedVertIDs[vertices[index1]][dir].Add(index3);
-
-		connectedVertIDs[vertices[index2]] = new Dictionary<Quaternion, List<int>>();
-		connectedVertIDs[vertices[index2]][dir] = new List<int>();
-		connectedVertIDs[vertices[index2]][dir].Add(index1);
-		connectedVertIDs[vertices[index2]][dir].Add(index3);
-
-		connectedVertIDs[vertices[index3]] = new Dictionary<Quaternion, List<int>>();
-		connectedVertIDs[vertices[index3]][dir] = new List<int>();
-		connectedVertIDs[vertices[index3]][dir].Add(index1);
-		connectedVertIDs[vertices[index3]][dir].Add(index2);
-	}
-
 	//add a new vert with corresponding UVs if xPos,yPos does not already contain one, and add this vert's position in vertices to vertIndicesAxes
-	bool addVert(Vector3 pos, Quaternion dir, bool flip, float vertSmoothnessthreshold) {
-        //if flipped, rotate the quaternion by 180 degrees on any axis
-        Quaternion finalDir = dir;
-        if (flip) {
-            finalDir = flipQuaternion(finalDir);
-        }
-        //make sure there are no vertices within vertSmoothnessthreshold at pos
-        if (vertIndices.ContainsKey(pos)) {
-            Dictionary<Quaternion, int> quatKey = vertIndices[pos];
-            foreach (Quaternion key in quatKey.Keys) {
-                float angleDiff = Quaternion.Angle(dir, key);
-                //Debug.Log("add vert angle diff: " + angleDiff);
-                if (angleDiff < vertSmoothnessthreshold + VertexDict.smoothnessFloatTolerance) {
-                    return false;
-                }
-            }
-        }
-
-        vertices.Add(pos);
-        setVert(vertices[vertices.Count - 1], dir, vertices.Count - 1);
-        return true;
+	VertexData addVert(Vector3 pos, Vector3 normal, float vertSmoothnessthreshold) {
+		//if vert already exists, return it. if not, create it first
+		VertexData newVert = vertDict.getVert(pos, normal);
+		if (newVert == null) {
+			vertices.Add(pos);
+			normals.Add(normal);
+			newVert = vertDict.addVert(vertices.Count - 1, pos, normal);
+		}
+        return newVert;
     }
-
-	//set vertex at pos, facing in dir axes
-	void setVert(Vector3 pos, Quaternion dir, int index) {
-		if (!vertIndices.ContainsKey(pos)) {
-			vertIndices[pos] = new Dictionary<Quaternion, int>();
-		}
-		vertIndices[pos][dir] = index;
-	}
-
-	//return index of vert at xPos, yPos, zPos facing in dir axes, -1 if not present
-	int getVert(Vector3 pos, Quaternion dir, float vertSmoothnessthreshold) { //check if vertex exists at pos
-		if (!vertIndices.ContainsKey(pos)) {
-			return -1;
-		}
-		Dictionary<Quaternion, int> quatKey = vertIndices[pos]; //check for a vertex within float tolerance
-		foreach (Quaternion key in quatKey.Keys) {
-			float angleDiff = Quaternion.Angle(dir, key);
-			//Debug.Log("angleDiff: " + angleDiff + ", dir: " + dir + ", key: " + key);
-			if (angleDiff < vertSmoothnessthreshold + VertexDict.smoothnessFloatTolerance) {
-				return quatKey[key];
-			}
-		}
-		return -1;
-	}
 
 	//UV modifiers
 	//calculate UV for point pos given points a,b,c (pos will typically be equivalent to one of these 3 points)
-	void addUV(Vector3 pos, Quaternion dir, Vector3 a, Vector3 b, Vector3 c, string uvMode, bool flip = false) {
+	void addUV(VertexData vertData, Vector3 a, Vector3 b, Vector3 c, string uvMode, bool flip = false) {
 		if (flip) { //change the vertex order when flipping, so that normals are flipped as well
 			Vector3 d = c;
 			c = b;
 			b = d;
 		}
+		Vector3 pos = vertices[vertData.verticesIndex];
 
-        normals.Add(calculateNormal(a, c, b));
         if (uvMode == "per face") {
             uvs.Add(pos == a ? new Vector2(0, 0) : pos == b ? new Vector2(0, 1) : pos == c ? new Vector2(1, 0) : new Vector2(1, 1));
         }
         else if (uvMode == "per face merge duplicates") {
-            int id = vertIndices[pos][dir];
+			int id = vertData.verticesIndex;
             if (id <= 3) {
                 id = 0;
             }
@@ -252,15 +213,6 @@ public class GenerateMesh : MonoBehaviour {
             uvs.Add(pos == a ? new Vector2(id, id) : pos == b ? new Vector2(id, id+1) : pos == c ? new Vector2(id+1, id) : new Vector2(id+1, id+1));
         }
     }
-
-	//get the UV coordinates of the vertex at pos,dir within vertSmoothnessthreshold
-	Vector2 getUV(Vector3 pos, Quaternion dir, float vertSmoothnessthreshold) {
-		int vertIndex = getVert(pos, dir, vertSmoothnessthreshold);
-		if (vertIndex == -1) {
-			throw new System.Exception();
-		}
-		return uvs[vertIndex];
-	}
 
 	//normal modifiers
     //average the normals of verts which have the same position, to create smooth lighting

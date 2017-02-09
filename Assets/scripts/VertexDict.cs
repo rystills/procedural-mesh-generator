@@ -7,7 +7,7 @@ using System;
 public class VertexDict {
 	public const float smoothnessFloatTolerance = .01f;//tolerance applied to all direction comparisons to compensate for floating point imprecision
 	public const int smoothnessFloatDigits = 2; //inverse of smoothnessFloatToleranceconst int smoothnessFloatDigits = 2; //inverse of smoothnessFloatTolerance
-	public const float normalAverageMaxDifference = 45; //normals of overlapping vertices will not be averaged if their starting normals are larger than this value
+	//public const float normalAverageMaxDifference = 45; //normals of overlapping vertices will not be averaged if their starting normals are larger than this value
 	public Dictionary<Vector3, Dictionary<Quaternion, VertexData>> verts; //input position and direction to get a single vertex (lookups are rounded using a smoothness constant)
 
 	public VertexDict() {
@@ -61,7 +61,7 @@ public class VertexDict {
 	}
 
 	//get vertex at position pos with normal normal
-	public VertexData getVert(Vector3 pos, Vector3 normal) {
+	public VertexData getVert(Vector3 pos, Vector3 normal, float quatSmoothnessThreshhold = 0) {
 		Dictionary<Quaternion, VertexData> vertDict = getVertDict(pos);
 		if (vertDict == null) { //vector not found at position pos
 			return null;
@@ -70,7 +70,7 @@ public class VertexDict {
 		//found a valid position; search for the closest normal at this position that falls within smoothnessFloatTolerance
 		bool foundCandidate = false;
 		Quaternion smallestKey = Quaternion.identity;
-		float smallestDiff = smoothnessFloatTolerance;
+		float smallestDiff = smoothnessFloatTolerance + quatSmoothnessThreshhold;
 		foreach (Quaternion key in vertDict.Keys) {
 			float angleDiff = Quaternion.Angle(Quaternion.Euler(normal.x,normal.y,normal.z), key);
 			if (angleDiff <= smallestDiff) {
