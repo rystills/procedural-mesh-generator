@@ -125,10 +125,10 @@ public class GenerateMesh : MonoBehaviour {
 		//calculate normal dir
 		Vector3 normal;
 		if (flip) {
-			normal = calculateNormal(pos, topRightPos, botLeftPos);
+			normal = calculateNormal(pos, botLeftPos, topRightPos);
 		}
 		else {
-			normal = calculateNormal(pos, botLeftPos, topRightPos);
+			normal = calculateNormal(pos, topRightPos, botLeftPos);
 		}
 		
 		//generate botRight vert
@@ -219,14 +219,18 @@ public class GenerateMesh : MonoBehaviour {
     void averageNormals() {
 		foreach (Dictionary<Quaternion, VertexData> dict in vertDict.verts.Values) { //loop over all verts in each group
 			VertexData[] curVerts = dict.Values.ToArray();
-			Vector3 avgNormal = new Vector3(0, 0, 0);
-			for (int i = 0; i < curVerts.Length; ++i) { //calculate average normal
-				avgNormal += normals[curVerts[i].verticesIndex];
+			for (int r = 0; r < curVerts.Length; ++r) { //loop over all other verts and average with this vert if within max normal difference
+				Vector3 avgNormal = new Vector3(0, 0, 0);
+				int vertsAveraged = 0;
+				for (int i = 0; i < curVerts.Length; ++i) { //calculate average normal
+					if (Vector3.Angle(normals[curVerts[i].verticesIndex], normals[curVerts[r].verticesIndex]) <= VertexDict.normalAverageMaxDifference + VertexDict.smoothnessFloatTolerance) {
+						avgNormal += normals[curVerts[i].verticesIndex];
+						vertsAveraged++;
+					}
+				}
+				normals[curVerts[r].verticesIndex] = avgNormal / vertsAveraged;
 			}
-			avgNormal /= curVerts.Count();
-			for (int i = 0; i < curVerts.Length; ++i) { //set each normal to average
-				normals[curVerts[i].verticesIndex] = avgNormal;
-			}
+			
 		}
     }
 
@@ -271,10 +275,10 @@ public class GenerateMesh : MonoBehaviour {
 
     void Update() {
         //undulate verts based on timer and position in list
-        Mesh mesh = GetComponent<MeshFilter>().mesh;
+        /*Mesh mesh = GetComponent<MeshFilter>().mesh;
         Vector3[] vertices = mesh.vertices;
-        /*for (int i = 0; i < vertices.Count; ++i) {
-            vertices[i] = vertices[i] + normals[i].normalized * (Mathf.Sin(2 * Time.time + i)/2);
+        for (int i = 0; i < vertices.Length; ++i) {
+            vertices[i] = vertices[i] + normals[i].normalized * (Mathf.Sin(2 * Time.time + i)/100);
         }
         mesh.vertices = vertices;*/
     }
