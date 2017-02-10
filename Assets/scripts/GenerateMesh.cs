@@ -4,34 +4,34 @@ using System.Collections.Generic;
 using System.Linq;
 
 public class GenerateMesh : MonoBehaviour {
-    public Material material;
-    List<int> triangles;
-	VertexDict vertDict;
-	List<Vector3> vertices;
-	List<Vector2> uvs;
-	List<Vector3> normals;
-    Texture2D debugTex;
+	public Material material;
+	public List<int> triangles;
+	public VertexDict vertDict;
+	public List<Vector3> vertices;
+	public List<Vector2> uvs;
+	public List<Vector3> normals;
+	Texture2D debugTex;
 
-    void Start() {
+	void Start() {
 		//new mesh lists
 		triangles = new List<int>();
 		vertDict = new VertexDict();
 		vertices = new List<Vector3>();
-        uvs = new List<Vector2>();
+		uvs = new List<Vector2>();
 		normals = new List<Vector3>();
-        //build debug texture as a fallback if no material is supplied
-        debugTex = new Texture2D(2, 2);
-        debugTex.SetPixel(0, 0, Color.red);
-        debugTex.SetPixel(1, 0, Color.magenta);
-        debugTex.SetPixel(0, 1, Color.blue);
-        debugTex.SetPixel(1, 1, Color.cyan);
-        debugTex.wrapMode = TextureWrapMode.Repeat;
-        debugTex.Apply();
-        //List<int> verts = generateBox(2, 3, 4);
-        List<int> verts = generateSpiral(2, 1, 100, 16);
-        displaceVerts(.2f, verts[0], verts[1]);
-        finalizeMesh();
-    }
+		//build debug texture as a fallback if no material is supplied
+		debugTex = new Texture2D(2, 2);
+		debugTex.SetPixel(0, 0, Color.red);
+		debugTex.SetPixel(1, 0, Color.magenta);
+		debugTex.SetPixel(0, 1, Color.blue);
+		debugTex.SetPixel(1, 1, Color.cyan);
+		debugTex.wrapMode = TextureWrapMode.Repeat;
+		debugTex.Apply();
+		//List<int> verts = generateBox(2, 3, 4);
+		List<int> verts = generateSpiral(2, 3, 300, 16);
+		displaceVerts(.2f, verts[0], verts[1]);
+		finalizeMesh();
+	}
 
 	//utility functions
 	//rotate quaternion quat on axis rotAxis by amount 
@@ -46,7 +46,7 @@ public class GenerateMesh : MonoBehaviour {
 
 	//find and return the rotation of the vertex which corresponds to vertIndex
 	VertexData getVertData(int vertIndex) {
-		VertexData vert = vertDict.getVert(vertices[vertIndex],normals[vertIndex]);
+		VertexData vert = vertDict.getVert(vertices[vertIndex], normals[vertIndex]);
 		if (vert != null) {
 			return vert;
 		}
@@ -81,25 +81,25 @@ public class GenerateMesh : MonoBehaviour {
 
 	}
 
-    //construct a box, with length, width, height segs
-    List<int> generateBox(float length, float width, float height) {
-        int startVertIndex = vertices.Count;
-        Vector3 rotAxis = Vector3.forward;
-        Quaternion rot = new Quaternion(0, 0, 0, 1);
-        Vector3 pos = new Vector3(0, 0, 0);
-        for (int i = 0; i < 4; ++i) { //generate a strip of 4 sides
-            pos = propagateQuad(pos, rot, 1, 1, true); //generate forward-facing quad and update current vertex position
-            rot = rotateQuaternion(rot, rotAxis, 90); //update rotation
-        }
-        Quaternion leftRot = rotateQuaternion(rot, Vector3.up, 90);
-        propagateQuad(pos, leftRot, 1,1,false); //generate 'left' sidee
-        propagateQuad(pos + Vector3.forward.normalized, leftRot, 1,1,true); //generate 'right' side
-        return new List<int> { startVertIndex, vertices.Count - 1 };
-    }
+	//construct a box, with length, width, height segs
+	List<int> generateBox(float length, float width, float height) {
+		int startVertIndex = vertices.Count;
+		Vector3 rotAxis = Vector3.forward;
+		Quaternion rot = new Quaternion(0, 0, 0, 1);
+		Vector3 pos = new Vector3(0, 0, 0);
+		for (int i = 0; i < 4; ++i) { //generate a strip of 4 sides
+			pos = propagateQuad(pos, rot, 1, 1, true); //generate forward-facing quad and update current vertex position
+			rot = rotateQuaternion(rot, rotAxis, 90); //update rotation
+		}
+		Quaternion leftRot = rotateQuaternion(rot, Vector3.up, 90);
+		propagateQuad(pos, leftRot, 1, 1, false); //generate 'left' sidee
+		propagateQuad(pos + Vector3.forward.normalized, leftRot, 1, 1, true); //generate 'right' side
+		return new List<int> { startVertIndex, vertices.Count - 1 };
+	}
 
 	//apply a random displacement between -maxDisp and +maxDisp from vert startIndex to vert endIndex (both inclusive) - for simplicity, each vertex uses the normal of the first vert in its group
 	void displaceVerts(float maxDisp, int startIndex, int endIndex) {
-		foreach (Dictionary<Quaternion,VertexData> dict in vertDict.verts.Values) {
+		foreach (Dictionary<Quaternion, VertexData> dict in vertDict.verts.Values) {
 			float curDisp = Random.Range(-1 * maxDisp, maxDisp);
 			VertexData[] curVerts = dict.Values.ToArray();
 			for (int i = 0; i < curVerts.Length; ++i) {
@@ -114,16 +114,16 @@ public class GenerateMesh : MonoBehaviour {
 	//core generators  
 	//create an additional quad from position[] of size quadsize in direction dir (returns ending position)
 	Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false, float vertSmoothnessthreshold = 0, string uvMode = "per face") {
-        //step 1: generate the necessary verts, and corresponding UVs
-        //calculate forward and left vectors from rotation Quaternion 
-        Vector3 forwardDir = dir * Vector3.forward;
-        Quaternion leftRotation = rotateQuaternion(dir, new Vector3(1, 0, 0), 90);
-        Vector3 leftDir = leftRotation * Vector3.forward;
+		//step 1: generate the necessary verts, and corresponding UVs
+		//calculate forward and left vectors from rotation Quaternion 
+		Vector3 forwardDir = dir * Vector3.forward;
+		Quaternion leftRotation = rotateQuaternion(dir, new Vector3(1, 0, 0), 90);
+		Vector3 leftDir = leftRotation * Vector3.forward;
 
 		//calculate 3 remaining positions from forward and left vectors
 		Vector3 topRightPos = pos + (forwardDir.normalized * width);
 		Vector3 botLeftPos = pos + (leftDir.normalized * extents);
-        Vector3 topLeftPos = botLeftPos + (forwardDir.normalized * width);
+		Vector3 topLeftPos = botLeftPos + (forwardDir.normalized * width);
 
 		//calculate normal dir
 		Vector3 normal;
@@ -133,7 +133,7 @@ public class GenerateMesh : MonoBehaviour {
 		else {
 			normal = calculateNormal(pos, topRightPos, botLeftPos);
 		}
-		
+
 		//generate botRight vert
 		VertexData botRightVert = vertDict.getVert(pos, normal);
 		if (botRightVert == null) {
@@ -155,14 +155,14 @@ public class GenerateMesh : MonoBehaviour {
 		//generate topLeft vert
 		VertexData topLeftVert = vertDict.getVert(topLeftPos, normal);
 		if (topLeftVert == null) {
-			topLeftVert= addVert(topLeftPos, normal, vertSmoothnessthreshold);
+			topLeftVert = addVert(topLeftPos, normal, vertSmoothnessthreshold);
 			addUV(topLeftVert, pos, topRightPos, botLeftPos, uvMode, flip);
 		}
 
-        //step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
+		//step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
 		addQuad(botRightVert.verticesIndex, topRightVert.verticesIndex, botLeftVert.verticesIndex, topLeftVert.verticesIndex, dir, flip);
-        return botLeftPos;
-    }
+		return botLeftPos;
+	}
 
 	//tri modifiers
 	//simple helper method to add two tris with the same normal, forming a single quad (recommended in most cases)
@@ -189,8 +189,8 @@ public class GenerateMesh : MonoBehaviour {
 			normals.Add(normal);
 			newVert = vertDict.addVert(vertices.Count - 1, pos, normal);
 		}
-        return newVert;
-    }
+		return newVert;
+	}
 
 	//UV modifiers
 	//calculate UV for point pos given points a,b,c (pos will typically be equivalent to one of these 3 points)
@@ -202,24 +202,24 @@ public class GenerateMesh : MonoBehaviour {
 		}
 		Vector3 pos = vertices[vertData.verticesIndex];
 
-        if (uvMode == "per face") {
-            uvs.Add(pos == a ? new Vector2(0, 0) : pos == b ? new Vector2(0, 1) : pos == c ? new Vector2(1, 0) : new Vector2(1, 1));
-        }
-        else if (uvMode == "per face merge duplicates") {
+		if (uvMode == "per face") {
+			uvs.Add(pos == a ? new Vector2(0, 0) : pos == b ? new Vector2(0, 1) : pos == c ? new Vector2(1, 0) : new Vector2(1, 1));
+		}
+		else if (uvMode == "per face merge duplicates") {
 			int id = vertData.verticesIndex;
-            if (id <= 3) {
-                id = 0;
-            }
-            else {
-                id = ((int)((id - 2) / 2));
-            }
-            uvs.Add(pos == a ? new Vector2(id, id) : pos == b ? new Vector2(id, id+1) : pos == c ? new Vector2(id+1, id) : new Vector2(id+1, id+1));
-        }
-    }
+			if (id <= 3) {
+				id = 0;
+			}
+			else {
+				id = ((int)((id - 2) / 2));
+			}
+			uvs.Add(pos == a ? new Vector2(id, id) : pos == b ? new Vector2(id, id + 1) : pos == c ? new Vector2(id + 1, id) : new Vector2(id + 1, id + 1));
+		}
+	}
 
 	//normal modifiers
-    //average the normals of verts which have the same position, to create smooth lighting
-    void averageNormals() {
+	//average the normals of verts which have the same position, to create smooth lighting
+	void averageNormals() {
 		foreach (Dictionary<Quaternion, VertexData> dict in vertDict.verts.Values) { //loop over all verts in each group
 			VertexData[] curVerts = dict.Values.ToArray();
 			Vector3[] newNormals = new Vector3[curVerts.Length];
@@ -239,60 +239,46 @@ public class GenerateMesh : MonoBehaviour {
 			for (int i = 0; i < newNormals.Length; ++i) { //apply all new normals at the end, so later normal calculations are not swayed by earlier normal calculations
 				normals[curVerts[i].verticesIndex] = newNormals[i] / newVertsAveraged[i];
 			}
-			
-		}
-    }
 
-    //construct the new mesh, and attach the appropriate components
-    void finalizeMesh(bool useUnityNormals = false) {
-        Mesh mesh = new Mesh();
-        MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
-        if (!meshFilter) {
-            meshFilter = gameObject.AddComponent<MeshFilter>();
-        }
-        meshFilter.mesh = mesh;
-        mesh.vertices = vertices.ToArray();
-        mesh.triangles = triangles.ToArray();
-        mesh.uv = uvs.ToArray();
-        meshFilter.mesh.RecalculateBounds();
-        if (useUnityNormals) {
-            meshFilter.mesh.RecalculateNormals();
-        }
-        else {
-            averageNormals();
-            meshFilter.mesh.normals = normals.ToArray();
-        }
-        MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
-        if (!meshRenderer) {
-            meshRenderer = gameObject.AddComponent<MeshRenderer>();
-        }
-        Renderer renderer = meshRenderer.GetComponent<Renderer>();
-        renderer.material.color = Color.blue;
-        MeshCollider meshCollider = gameObject.GetComponent<MeshCollider>();
-        if (!meshCollider) {
-            meshCollider = gameObject.AddComponent<MeshCollider>();
-        }
-        meshCollider.sharedMesh = mesh;
-        if (material) {
-            renderer.material = material;
-        }
-        else {
-            renderer.material.mainTexture = debugTex;
-            renderer.material.color = Color.white;
-        }
-    }
-
-    void Update() {
-		//wave vert groups by the first vert's normal for the sake of simplicity
-		int count = 0;
-		foreach (Dictionary<Quaternion, VertexData> dict in vertDict.verts.Values) {
-			VertexData[] curVerts = dict.Values.ToArray();
-			for (int i = 0; i < curVerts.Length; ++i) {
-				vertices[curVerts[i].verticesIndex] = vertices[curVerts[i].verticesIndex] + normals[curVerts[0].verticesIndex].normalized * (Mathf.Sin(2 * Time.time + count) / 400);
-			}
-			++count;
 		}
-		Mesh mesh = GetComponent<MeshFilter>().mesh;
+	}
+
+	//construct the new mesh, and attach the appropriate components
+	void finalizeMesh(bool useUnityNormals = false) {
+		Mesh mesh = new Mesh();
+		MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
+		if (!meshFilter) {
+			meshFilter = gameObject.AddComponent<MeshFilter>();
+		}
+		meshFilter.mesh = mesh;
 		mesh.vertices = vertices.ToArray();
-    }
+		mesh.triangles = triangles.ToArray();
+		mesh.uv = uvs.ToArray();
+		meshFilter.mesh.RecalculateBounds();
+		if (useUnityNormals) {
+			meshFilter.mesh.RecalculateNormals();
+		}
+		else {
+			averageNormals();
+			meshFilter.mesh.normals = normals.ToArray();
+		}
+		MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
+		if (!meshRenderer) {
+			meshRenderer = gameObject.AddComponent<MeshRenderer>();
+		}
+		Renderer renderer = meshRenderer.GetComponent<Renderer>();
+		renderer.material.color = Color.blue;
+		MeshCollider meshCollider = gameObject.GetComponent<MeshCollider>();
+		if (!meshCollider) {
+			meshCollider = gameObject.AddComponent<MeshCollider>();
+		}
+		meshCollider.sharedMesh = mesh;
+		if (material) {
+			renderer.material = material;
+		}
+		else {
+			renderer.material.mainTexture = debugTex;
+			renderer.material.color = Color.white;
+		}
+	}
 }
