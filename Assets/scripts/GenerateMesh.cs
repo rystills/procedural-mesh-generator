@@ -12,7 +12,7 @@ public class GenerateMesh : MonoBehaviour {
 	public List<Vector3> normals;
 	Texture2D debugTex;
 
-	void Start() {
+	void Awake() {
 		//new mesh lists
 		triangles = new List<int>();
 		vertDict = new VertexDict();
@@ -27,26 +27,21 @@ public class GenerateMesh : MonoBehaviour {
 		debugTex.SetPixel(1, 1, Color.cyan);
 		debugTex.wrapMode = TextureWrapMode.Repeat;
 		debugTex.Apply();
-		//List<int> verts = generateBox(2, 3, 4);
-		//List<int> verts = generateSpiral(2, 3, 300, 16);
-		List<int> verts = generateCyllinder(3, 4, 6);
-		//displaceVerts(.2f, verts[0], verts[1]);
-		finalizeMesh();
 	}
 
 	//utility functions
 	//rotate quaternion quat on axis rotAxis by amount 
-	Quaternion rotateQuaternion(Quaternion quat, Vector3 rotAxis, float amount) {
+	public Quaternion rotateQuaternion(Quaternion quat, Vector3 rotAxis, float amount) {
 		return quat * Quaternion.Euler(rotAxis * amount);
 	}
 
 	//return Quaternion quat rotated by 180 degrees to face in the opposite direction (useful for flipping normals)
-	Quaternion flipQuaternion(Quaternion quat) {
+	public Quaternion flipQuaternion(Quaternion quat) {
 		return (new Quaternion(1, 0, 0, 0)) * quat;
 	}
 
 	//find and return the rotation of the vertex which corresponds to vertIndex
-	VertexData getVertData(int vertIndex) {
+	public VertexData getVertData(int vertIndex) {
 		VertexData vert = vertDict.getVert(vertices[vertIndex], normals[vertIndex]);
 		if (vert != null) {
 			return vert;
@@ -55,88 +50,16 @@ public class GenerateMesh : MonoBehaviour {
 	}
 
 	//return the normal vector between vectors a,b,c
-	Vector3 calculateNormal(Vector3 a, Vector3 b, Vector3 c) {
+	public Vector3 calculateNormal(Vector3 a, Vector3 b, Vector3 c) {
 		Vector3 side1 = b - a;
 		Vector3 side2 = c - a;
 		Vector3 perp = Vector3.Cross(side1, side2);
 		return perp / perp.magnitude;
-	}
-
-	//mesh construction blueprints
-	//construct a spiral, with segs quads of width, extents, rotating each quad by iterAngle
-	List<int> generateSpiral(float width, float extents, int segs, float iterAngle) {
-		int startVertIndex = vertices.Count;
-		Vector3 rotAxis = Vector3.forward;
-		Quaternion rot = new Quaternion(0, 0, 0, 1);
-		Vector3 pos = new Vector3(0, 0, 0);
-		float curExtents = extents;
-		for (int i = 0; i < segs; ++i, curExtents -= extents / (float)segs) { //decrease segment length after each iteration
-			propagateQuad(pos, rot, width, curExtents, true); //generate back-facing quad (flipped normal)
-			pos = propagateQuad(pos, rot, width, curExtents, false); //generate forward-facing quad and update current vertex position
-			rot = rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
-		}
-		if (segs == 0 || startVertIndex == vertices.Count) { //if we didnt make any new verts, return an empty list
-			return null;
-		}
-		return new List<int> { startVertIndex, vertices.Count - 1 };
-
-	}
-
-	//construct a segs-sided cyllinder with width and extents
-	List<int> generateCyllinder(float width, float extents, int segs) {
-		int startVertIndex = vertices.Count;
-		Vector3 rotAxis = Vector3.forward;
-		Quaternion rot = new Quaternion(0, 0, 0, 1);
-		Vector3 pos = new Vector3(0, 0, 0);
-		float iterAngle = 360 / (float)segs;
-		float iterExtents = extents / (float)segs;
-		Debug.Log(iterAngle);
-		Debug.Log(iterAngle * segs);
-		//Debug.Log(iterExtents);
-		for (int i = 0; i < segs; ++i) {
-			propagateQuad(pos, rot, width, iterExtents, false); //generate back-facing quad (flipped normal)
-			pos = propagateQuad(pos, rot, width, iterExtents, true); //generate forward-facing quad and update current vertex position
-			rot = rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
-		}
-		if (segs == 0 || startVertIndex == vertices.Count) { //if we didnt make any new verts, return an empty list
-			return null;
-		}
-		return new List<int> { startVertIndex, vertices.Count - 1 };
-	}
-
-	//construct a box, with length, width, height segs
-	List<int> generateBox(float length, float width, float height) {
-		int startVertIndex = vertices.Count;
-		Vector3 rotAxis = Vector3.forward;
-		Quaternion rot = new Quaternion(0, 0, 0, 1);
-		Vector3 pos = new Vector3(0, 0, 0);
-		for (int i = 0; i < 4; ++i) { //generate a strip of 4 sides
-			pos = propagateQuad(pos, rot, 1, 1, true); //generate forward-facing quad and update current vertex position
-			rot = rotateQuaternion(rot, rotAxis, 90); //update rotation
-		}
-		Quaternion leftRot = rotateQuaternion(rot, Vector3.up, 90);
-		propagateQuad(pos, leftRot, 1, 1, false); //generate 'left' sidee
-		propagateQuad(pos + Vector3.forward.normalized, leftRot, 1, 1, true); //generate 'right' side
-		return new List<int> { startVertIndex, vertices.Count - 1 };
-	}
-
-	//apply a random displacement between -maxDisp and +maxDisp from vert startIndex to vert endIndex (both inclusive) - for simplicity, each vertex uses the normal of the first vert in its group
-	void displaceVerts(float maxDisp, int startIndex, int endIndex) {
-		foreach (Dictionary<Quaternion, VertexData> dict in vertDict.verts.Values) {
-			float curDisp = Random.Range(-1 * maxDisp, maxDisp);
-			VertexData[] curVerts = dict.Values.ToArray();
-			for (int i = 0; i < curVerts.Length; ++i) {
-				if (!(startIndex <= curVerts[i].verticesIndex && curVerts[i].verticesIndex <= endIndex)) {
-					continue;
-				}
-				vertices[curVerts[i].verticesIndex] += (normals[curVerts[0].verticesIndex].normalized * curDisp);
-			}
-		}
-	}
+	}	
 
 	//core generators  
 	//create an additional quad from position[] of size quadsize in direction dir (returns ending position)
-	Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false, float vertSmoothnessthreshold = 0, string uvMode = "per face") {
+	public Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false, float vertSmoothnessthreshold = 0, string uvMode = "per face") {
 		//step 1: generate the necessary verts, and corresponding UVs
 		//calculate forward and left vectors from rotation Quaternion 
 		Vector3 forwardDir = dir * Vector3.forward;
@@ -189,14 +112,15 @@ public class GenerateMesh : MonoBehaviour {
 
 	//tri modifiers
 	//simple helper method to add two tris with the same normal, forming a single quad (recommended in most cases)
-	void addQuad(int botRightIndex, int topRightIndex, int botLeftIndex, int topLeftIndex, Quaternion dir, bool flip) {
+	public void addQuad(int botRightIndex, int topRightIndex, int botLeftIndex, int topLeftIndex, Quaternion dir, bool flip) {
 		//first new tri
 		addTri(botRightIndex, topRightIndex, botLeftIndex, dir, flip);
 		//second new tri
 		addTri(topRightIndex, topLeftIndex, botLeftIndex, dir, flip);
 	}
+
 	//simple helper method to add 3 points to the triangles list
-	void addTri(int index1, int index2, int index3, Quaternion dir, bool flip = false) {
+	public void addTri(int index1, int index2, int index3, Quaternion dir, bool flip = false) {
 		triangles.Add(flip ? index3 : index1);
 		triangles.Add(index2);
 		triangles.Add(flip ? index1 : index3);
@@ -204,7 +128,7 @@ public class GenerateMesh : MonoBehaviour {
 
 	//vert modifiers
 	//add a new vert with corresponding UVs if xPos,yPos does not already contain one, and add this vert's position in vertices to vertIndicesAxes
-	VertexData addVert(Vector3 pos, Vector3 normal, float vertSmoothnessthreshold) {
+	public VertexData addVert(Vector3 pos, Vector3 normal, float vertSmoothnessthreshold) {
 		//if vert already exists, return it. if not, create it first
 		VertexData newVert = vertDict.getVert(pos, normal);
 		if (newVert == null) {
@@ -217,7 +141,7 @@ public class GenerateMesh : MonoBehaviour {
 
 	//UV modifiers
 	//calculate UV for point pos given points a,b,c (pos will typically be equivalent to one of these 3 points)
-	void addUV(VertexData vertData, Vector3 a, Vector3 b, Vector3 c, string uvMode, bool flip = false) {
+	public void addUV(VertexData vertData, Vector3 a, Vector3 b, Vector3 c, string uvMode, bool flip = false) {
 		if (flip) { //change the vertex order when flipping, so that normals are flipped as well
 			Vector3 d = c;
 			c = b;
@@ -242,7 +166,7 @@ public class GenerateMesh : MonoBehaviour {
 
 	//normal modifiers
 	//average the normals of verts which have the same position, to create smooth lighting
-	void averageNormals() {
+	public void averageNormals() {
 		foreach (Dictionary<Quaternion, VertexData> dict in vertDict.verts.Values) { //loop over all verts in each group
 			VertexData[] curVerts = dict.Values.ToArray();
 			Vector3[] newNormals = new Vector3[curVerts.Length];
@@ -259,13 +183,14 @@ public class GenerateMesh : MonoBehaviour {
 			}
 			for (int i = 0; i < newNormals.Length; ++i) { //apply all new normals at the end, so later normal calculations are not swayed by earlier normal calculations
 				normals[curVerts[i].verticesIndex] = newNormals[i];
+				Debug.Log(newNormals[i]);
 			}
 
 		}
 	}
 
 	//construct the new mesh, and attach the appropriate components
-	void finalizeMesh(bool useUnityNormals = false) {
+	public void finalizeMesh(bool useUnityNormals = false) {
 		Mesh mesh = new Mesh();
 		MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
 		if (!meshFilter) {

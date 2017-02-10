@@ -7,7 +7,7 @@ using System;
 public class VertexDict {
 	public const float smoothnessFloatTolerance = .01f;//tolerance applied to all direction comparisons to compensate for floating point imprecision
 	public const int smoothnessFloatDigits = 2; //inverse of smoothnessFloatToleranceconst int smoothnessFloatDigits = 2; //inverse of smoothnessFloatTolerance
-	public const float normalAverageMaxDifference = 45; //normals of overlapping vertices will not be averaged if their starting normals are larger than this value
+	public const float normalAverageMaxDifference = 60; //normals of overlapping vertices will not be averaged if their starting normals are larger than this value
 	public Dictionary<Vector3, Dictionary<Quaternion, VertexData>> verts; //input position and direction to get a single vertex (lookups are rounded using a smoothness constant)
 
 	public VertexDict() {
