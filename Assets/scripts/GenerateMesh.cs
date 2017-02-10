@@ -28,8 +28,9 @@ public class GenerateMesh : MonoBehaviour {
 		debugTex.wrapMode = TextureWrapMode.Repeat;
 		debugTex.Apply();
 		//List<int> verts = generateBox(2, 3, 4);
-		List<int> verts = generateSpiral(2, 3, 300, 16);
-		displaceVerts(.2f, verts[0], verts[1]);
+		//List<int> verts = generateSpiral(2, 3, 300, 16);
+		List<int> verts = generateCyllinder(3, 4, 6);
+		//displaceVerts(.2f, verts[0], verts[1]);
 		finalizeMesh();
 	}
 
@@ -69,7 +70,7 @@ public class GenerateMesh : MonoBehaviour {
 		Quaternion rot = new Quaternion(0, 0, 0, 1);
 		Vector3 pos = new Vector3(0, 0, 0);
 		float curExtents = extents;
-		for (int i = 0; i < segs; ++i, curExtents -= extents / segs) { //decrease segment length after each iteration
+		for (int i = 0; i < segs; ++i, curExtents -= extents / (float)segs) { //decrease segment length after each iteration
 			propagateQuad(pos, rot, width, curExtents, true); //generate back-facing quad (flipped normal)
 			pos = propagateQuad(pos, rot, width, curExtents, false); //generate forward-facing quad and update current vertex position
 			rot = rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
@@ -79,6 +80,28 @@ public class GenerateMesh : MonoBehaviour {
 		}
 		return new List<int> { startVertIndex, vertices.Count - 1 };
 
+	}
+
+	//construct a segs-sided cyllinder with width and extents
+	List<int> generateCyllinder(float width, float extents, int segs) {
+		int startVertIndex = vertices.Count;
+		Vector3 rotAxis = Vector3.forward;
+		Quaternion rot = new Quaternion(0, 0, 0, 1);
+		Vector3 pos = new Vector3(0, 0, 0);
+		float iterAngle = 360 / (float)segs;
+		float iterExtents = extents / (float)segs;
+		Debug.Log(iterAngle);
+		Debug.Log(iterAngle * segs);
+		//Debug.Log(iterExtents);
+		for (int i = 0; i < segs; ++i) {
+			propagateQuad(pos, rot, width, iterExtents, false); //generate back-facing quad (flipped normal)
+			pos = propagateQuad(pos, rot, width, iterExtents, true); //generate forward-facing quad and update current vertex position
+			rot = rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
+		}
+		if (segs == 0 || startVertIndex == vertices.Count) { //if we didnt make any new verts, return an empty list
+			return null;
+		}
+		return new List<int> { startVertIndex, vertices.Count - 1 };
 	}
 
 	//construct a box, with length, width, height segs
@@ -223,7 +246,6 @@ public class GenerateMesh : MonoBehaviour {
 		foreach (Dictionary<Quaternion, VertexData> dict in vertDict.verts.Values) { //loop over all verts in each group
 			VertexData[] curVerts = dict.Values.ToArray();
 			Vector3[] newNormals = new Vector3[curVerts.Length];
-			int[] newVertsAveraged = new int[curVerts.Length];
 			for (int r = 0; r < curVerts.Length; ++r) { //loop over all other verts and average with this vert if within max normal difference
 				Vector3 avgNormal = new Vector3(0, 0, 0);
 				int vertsAveraged = 0;
@@ -233,11 +255,10 @@ public class GenerateMesh : MonoBehaviour {
 						vertsAveraged++;
 					}
 				}
-				newNormals[r] = avgNormal / vertsAveraged;
-				newVertsAveraged[r] = vertsAveraged;
+				newNormals[r] = avgNormal / (float)vertsAveraged;
 			}
 			for (int i = 0; i < newNormals.Length; ++i) { //apply all new normals at the end, so later normal calculations are not swayed by earlier normal calculations
-				normals[curVerts[i].verticesIndex] = newNormals[i] / newVertsAveraged[i];
+				normals[curVerts[i].verticesIndex] = newNormals[i];
 			}
 
 		}
