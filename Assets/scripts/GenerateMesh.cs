@@ -74,7 +74,7 @@ public class GenerateMesh : MonoBehaviour {
 
 	public Vector3 generateQuad(Vector3 botRightPos, Vector3 topRightPos, Vector3 botLeftPos, Vector3? topLeftPos = null, float vertSmoothnessThreshold = 0, string uvMode = "per face") {
 		//calculate normal dir
-		Vector3 normal = calculateNormal(botRightPos, botLeftPos, topRightPos);
+		Vector3 normal = calculateNormal(botRightPos, topRightPos, botLeftPos);
 
 		//generate botRight vert
 		VertexData botRightVert = vertDict.getVert(botRightPos, normal);
@@ -112,7 +112,7 @@ public class GenerateMesh : MonoBehaviour {
 			addTri(topRightVert.verticesIndex, topLeftVert.verticesIndex, botLeftVert.verticesIndex);
 		}
 		
-		return topRightPos;
+		return botLeftPos;
 	}
 
 	//tri modifiers
