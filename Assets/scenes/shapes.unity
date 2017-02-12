@@ -745,7 +745,7 @@ MonoBehaviour:
   - 4
   - 8
   - 1
-  displace: 1
+  displace: 0
 --- !u!114 &1825606966
 MonoBehaviour:
   m_ObjectHideFlags: 0

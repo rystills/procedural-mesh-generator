@@ -101,14 +101,17 @@ public class MeshShapes : MonoBehaviour {
 		}
 
 		if (cap) { //cap front and back of cylinder
-			for (int i = 1; i < frontVerts.Count-1; ++i) {
-				meshGenerator.addTri(frontVerts[0], frontVerts[i], frontVerts[i+1]);
-			}
-			for (int i = 1; i < backVerts.Count - 1; ++i) {
-				meshGenerator.addTri(backVerts[0], backVerts[i+1], backVerts[i]);
-			}
+			generateCap(frontVerts);
+			generateCap(backVerts,true);			
 		}
 		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
+	}
+
+	//generate cap-faces between verts list
+	public void generateCap(List<int> verts, bool flip = false) {
+		for (int i = 1; i < verts.Count - 1; ++i) {
+			meshGenerator.generateQuad(meshGenerator.vertices[verts[0]], meshGenerator.vertices[verts[i + (flip ? 1 : 0)]], meshGenerator.vertices[verts[i + (flip ? 0 : 1)]]);
+		}
 	}
 
 	//construct a box, with length, width, height segs
