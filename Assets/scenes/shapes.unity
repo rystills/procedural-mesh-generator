@@ -321,7 +321,7 @@ MonoBehaviour:
   - 1.5
   - 4
   - 4
-  - 1
+  - 0
   displace: 1
 --- !u!114 &1150009292
 MonoBehaviour:
@@ -409,7 +409,7 @@ MonoBehaviour:
   args:
   - 1.5
   - 4
-  - 800
+  - 100
   - 1
   displace: 0
 --- !u!114 &1362033343

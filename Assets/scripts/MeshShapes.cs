@@ -83,8 +83,11 @@ public class MeshShapes : MonoBehaviour {
 		List<int> frontVerts = new List<int>();
 		List<int> backVerts = new List<int>();
 		for (int i = 0; i < segs; ++i) {
-			meshGenerator.propagateQuad(pos, rot, width, iterExtents, true); //generate back-facing quad (flipped normal)
-			pos = meshGenerator.propagateQuad(pos, rot, width, iterExtents, false); //generate forward-facing quad and update current vertex position
+			
+			if (!cap) {
+				meshGenerator.propagateQuad(pos, rot, width, iterExtents, false); //generate forward-facing quad and update current vertex position
+			}
+			pos = meshGenerator.propagateQuad(pos, rot, width, iterExtents, true); //generate back-facing quad (flipped normal)
 			rot = meshGenerator.rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
 			if (cap) {
 				frontVerts.Add(meshGenerator.vertices.Count - 2);
@@ -99,10 +102,10 @@ public class MeshShapes : MonoBehaviour {
 
 		if (cap) { //cap front and back of cylinder
 			for (int i = 1; i < frontVerts.Count-1; ++i) {
-				meshGenerator.addTri(frontVerts[0], frontVerts[i+1], frontVerts[i]);
+				meshGenerator.addTri(frontVerts[0], frontVerts[i], frontVerts[i+1]);
 			}
 			for (int i = 1; i < backVerts.Count - 1; ++i) {
-				meshGenerator.addTri(backVerts[0], backVerts[i], backVerts[i+1]);
+				meshGenerator.addTri(backVerts[0], backVerts[i+1], backVerts[i]);
 			}
 		}
 		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };

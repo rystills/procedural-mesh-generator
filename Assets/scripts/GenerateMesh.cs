@@ -69,10 +69,10 @@ public class GenerateMesh : MonoBehaviour {
 		Vector3 botLeftPos = pos + (leftDir.normalized * extents);
 		Vector3 topLeftPos = botLeftPos + (forwardDir.normalized * width);
 
-		return generateQuad(pos, flip ? botLeftPos : topRightPos, flip ? topRightPos : botLeftPos, topLeftPos, vertSmoothnessThreshold, uvMode);
+		return generateQuad(pos, flip ? botLeftPos : topRightPos, flip ? topRightPos : botLeftPos, topLeftPos, vertSmoothnessThreshold, flip? "topRight" : "botLeft", uvMode);
 	}
 
-	public Vector3 generateQuad(Vector3 botRightPos, Vector3 topRightPos, Vector3 botLeftPos, Vector3? topLeftPos = null, float vertSmoothnessThreshold = 0, string uvMode = "per face") {
+	public Vector3 generateQuad(Vector3 botRightPos, Vector3 topRightPos, Vector3 botLeftPos, Vector3? topLeftPos = null, float vertSmoothnessThreshold = 0, string returnPos = "botLeft", string uvMode = "per face") {
 		//calculate normal dir
 		Vector3 normal = calculateNormal(botRightPos, topRightPos, botLeftPos);
 
@@ -112,7 +112,7 @@ public class GenerateMesh : MonoBehaviour {
 			addTri(topRightVert.verticesIndex, topLeftVert.verticesIndex, botLeftVert.verticesIndex);
 		}
 		
-		return botLeftPos;
+		return returnPos == "botLeft" ? botLeftPos : topRightPos;
 	}
 
 	//tri modifiers
