@@ -63,8 +63,7 @@ public class GenerateMesh : MonoBehaviour {
 		//step 1: generate the necessary verts, and corresponding UVs
 		//calculate forward and left vectors from rotation Quaternion 
 		Vector3 forwardDir = dir * Vector3.forward;
-		Quaternion leftRotation = rotateQuaternion(dir, new Vector3(1, 0, 0), 90);
-		Vector3 leftDir = leftRotation * Vector3.forward;
+		Vector3 leftDir = rotateQuaternion(dir, new Vector3(1, 0, 0), 90) * Vector3.forward;
 
 		//calculate 3 remaining positions from forward and left vectors
 		Vector3 topRightPos = pos + (forwardDir.normalized * width);
@@ -72,13 +71,7 @@ public class GenerateMesh : MonoBehaviour {
 		Vector3 topLeftPos = botLeftPos + (forwardDir.normalized * width);
 
 		//calculate normal dir
-		Vector3 normal;
-		if (flip) {
-			normal = calculateNormal(pos, botLeftPos, topRightPos);
-		}
-		else {
-			normal = calculateNormal(pos, topRightPos, botLeftPos);
-		}
+		Vector3 normal = calculateNormal(pos, flip ? topRightPos : botLeftPos, flip ? botLeftPos: topRightPos);
 
 		//generate botRight vert
 		VertexData botRightVert = vertDict.getVert(pos, normal);
@@ -183,7 +176,6 @@ public class GenerateMesh : MonoBehaviour {
 			}
 			for (int i = 0; i < newNormals.Length; ++i) { //apply all new normals at the end, so later normal calculations are not swayed by earlier normal calculations
 				normals[curVerts[i].verticesIndex] = newNormals[i];
-				Debug.Log(newNormals[i]);
 			}
 
 		}

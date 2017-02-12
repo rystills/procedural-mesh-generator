@@ -12,6 +12,7 @@ public class MeshShapes : MonoBehaviour {
 
 	// Use this for initialization
 	void Start() {
+		float startTime = Time.realtimeSinceStartup; //record start time at beginning of function
 		List<int> verts = null;
 		meshGenerator = this.GetComponent<GenerateMesh>();
 		if (shape == "box") {
@@ -20,17 +21,22 @@ public class MeshShapes : MonoBehaviour {
 		else if (shape == "spiral") {
 			verts = generateSpiral(float.Parse(args[0]), float.Parse(args[1]), int.Parse(args[2]), float.Parse(args[3]));
 		}
-		else if (shape == "cyllinder") {
-			verts = generateCyllinder(float.Parse(args[0]), float.Parse(args[1]), int.Parse(args[2]));
+		else if (shape == "cylinder") {
+			verts = generateCylinder(float.Parse(args[0]), float.Parse(args[1]), int.Parse(args[2]), System.Convert.ToBoolean(args[3]));
 		}
 		if (displace) {
 			displaceVerts(.2f, verts[0], verts[1]);
 		}
-		//List<int> verts = generateBox(2, 3, 4);
-		//List<int> verts = generateSpiral(2, 3, 300, 16);
-		//List<int> verts = generateCyllinder(1.5f, 4, 3);
-		//displaceVerts(.2f, verts[0], verts[1]);
 		meshGenerator.finalizeMesh();
+
+		//calculate end time and print args and time
+		float endTime = Time.realtimeSinceStartup;
+		string debugString = "time to generate " + shape + "(";
+		for (int i = 0; i < args.Count; ++i) {
+			debugString += args[i] + (i == args.Count - 1 ? ")" : ", "); 
+		}
+		debugString += ": " + (endTime - startTime) + " seconds";
+		Debug.Log(debugString);
 	}
 
 	//apply a random displacement between -maxDisp and +maxDisp from vert startIndex to vert endIndex (both inclusive) - for simplicity, each vertex uses the normal of the first vert in its group
@@ -66,8 +72,8 @@ public class MeshShapes : MonoBehaviour {
 
 	}
 
-	//construct a segs-sided cyllinder with width and extents
-	List<int> generateCyllinder(float width, float extents, int segs) {
+	//construct a segs-sided cylinder with width and extents
+	List<int> generateCylinder(float width, float extents, int segs, bool cap = false) {
 		int startVertIndex = meshGenerator.vertices.Count;
 		Vector3 rotAxis = Vector3.forward;
 		Quaternion rot = new Quaternion(0, 0, 0, 1);
@@ -81,6 +87,15 @@ public class MeshShapes : MonoBehaviour {
 		}
 		if (segs == 0 || startVertIndex == meshGenerator.vertices.Count) { //if we didnt make any new verts, return an empty list
 			return null;
+		}
+
+		//cap front and back of cylinder
+		if (cap) {
+			List<int> capVerts = new List<int>();
+			for (int i = 0; i < segs; ++i) {
+				capVerts += 
+			}
+			capHole(capVerts);
 		}
 		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
 	}

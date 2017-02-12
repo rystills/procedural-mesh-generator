@@ -21,7 +21,8 @@ public class MeshEffects : MonoBehaviour {
 			foreach (Dictionary<Quaternion, VertexData> dict in meshGenerator.vertDict.verts.Values) {
 				VertexData[] curVerts = dict.Values.ToArray();
 				for (int i = 0; i < curVerts.Length; ++i) {
-						meshGenerator.vertices[curVerts[i].verticesIndex] = meshGenerator.vertices[curVerts[i].verticesIndex] + meshGenerator.normals[curVerts[0].verticesIndex].normalized * (Mathf.Sin(2 * Time.time + (6f*6.28f / (float)meshGenerator.vertDict.verts.Values.Count)* count) / 2000);
+						meshGenerator.vertices[curVerts[i].verticesIndex] = meshGenerator.vertices[curVerts[i].verticesIndex] + meshGenerator.normals[curVerts[0].verticesIndex].normalized * 
+						(Mathf.Sin(2 * Time.time + (6f*6.28f / (float)meshGenerator.vertDict.verts.Values.Count)* count) / 2000);
 				}
 				++count;
 			}
