@@ -59,8 +59,7 @@ public class GenerateMesh : MonoBehaviour {
 
 	//core generators  
 	//create an additional quad from position[] of size quadsize in direction dir (returns ending position)
-	public Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false, float vertSmoothnessthreshold = 0, string uvMode = "per face") {
-		//step 1: generate the necessary verts, and corresponding UVs
+	public Vector3 propagateQuad(Vector3 pos, Quaternion dir, float width, float extents, bool flip = false, float vertSmoothnessThreshold = 0, string uvMode = "per face") {
 		//calculate forward and left vectors from rotation Quaternion 
 		Vector3 forwardDir = dir * Vector3.forward;
 		Vector3 leftDir = rotateQuaternion(dir, new Vector3(1, 0, 0), 90) * Vector3.forward;
@@ -70,50 +69,56 @@ public class GenerateMesh : MonoBehaviour {
 		Vector3 botLeftPos = pos + (leftDir.normalized * extents);
 		Vector3 topLeftPos = botLeftPos + (forwardDir.normalized * width);
 
+		return generateQuad(pos, flip ? botLeftPos : topRightPos, flip ? topRightPos : botLeftPos, topLeftPos, vertSmoothnessThreshold, uvMode);
+	}
+
+	public Vector3 generateQuad(Vector3 botRightPos, Vector3 topRightPos, Vector3 botLeftPos, Vector3? topLeftPos = null, float vertSmoothnessThreshold = 0, string uvMode = "per face") {
 		//calculate normal dir
-		Vector3 normal = calculateNormal(pos, flip ? topRightPos : botLeftPos, flip ? botLeftPos: topRightPos);
+		Vector3 normal = calculateNormal(botRightPos, botLeftPos, topRightPos);
 
 		//generate botRight vert
-		VertexData botRightVert = vertDict.getVert(pos, normal);
+		VertexData botRightVert = vertDict.getVert(botRightPos, normal);
 		if (botRightVert == null) {
-			botRightVert = addVert(pos, normal, vertSmoothnessthreshold);
-			addUV(botRightVert, pos, topRightPos, botLeftPos, uvMode, flip);
+			botRightVert = addVert(botRightPos, normal, vertSmoothnessThreshold);
+			addUV(botRightVert, botRightPos, topRightPos, botLeftPos, uvMode);
 		}
 		//generate topRight vert
 		VertexData topRightVert = vertDict.getVert(topRightPos, normal);
 		if (topRightVert == null) {
-			topRightVert = addVert(topRightPos, normal, vertSmoothnessthreshold);
-			addUV(topRightVert, pos, topRightPos, botLeftPos, uvMode, flip);
+			topRightVert = addVert(topRightPos, normal, vertSmoothnessThreshold);
+			addUV(topRightVert, botRightPos, topRightPos, botLeftPos, uvMode);
 		}
 		//generate botLeft vert
 		VertexData botLeftVert = vertDict.getVert(botLeftPos, normal);
 		if (botLeftVert == null) {
-			botLeftVert = addVert(botLeftPos, normal, vertSmoothnessthreshold);
-			addUV(botLeftVert, pos, topRightPos, botLeftPos, uvMode, flip);
+			botLeftVert = addVert(botLeftPos, normal, vertSmoothnessThreshold);
+			addUV(botLeftVert, botRightPos, topRightPos, botLeftPos, uvMode);
 		}
-		//generate topLeft vert
-		VertexData topLeftVert = vertDict.getVert(topLeftPos, normal);
-		if (topLeftVert == null) {
-			topLeftVert = addVert(topLeftPos, normal, vertSmoothnessthreshold);
-			addUV(topLeftVert, pos, topRightPos, botLeftPos, uvMode, flip);
+		//generate topLeft vert, if it exists (otherwise we are just going to build one tri)
+		VertexData topLeftVert = null;
+		if (topLeftPos.HasValue) {
+			topLeftVert = vertDict.getVert(topLeftPos.Value, normal);
+			if (topLeftVert == null) {
+				topLeftVert = addVert(topLeftPos.Value, normal, vertSmoothnessThreshold);
+				addUV(topLeftVert, botRightPos, topRightPos, botLeftPos, uvMode);
+			}
 		}
 
-		//step 2: generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
-		addQuad(botRightVert.verticesIndex, topRightVert.verticesIndex, botLeftVert.verticesIndex, topLeftVert.verticesIndex, dir, flip);
-		return botLeftPos;
+		//generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
+		//first new tri
+		addTri(botRightVert.verticesIndex, topRightVert.verticesIndex, botLeftVert.verticesIndex);
+		//second new tri
+		if (topLeftVert != null) {
+			addTri(topRightVert.verticesIndex, topLeftVert.verticesIndex, botLeftVert.verticesIndex);
+		}
+		
+		return topRightPos;
 	}
 
 	//tri modifiers
-	//simple helper method to add two tris with the same normal, forming a single quad (recommended in most cases)
-	public void addQuad(int botRightIndex, int topRightIndex, int botLeftIndex, int topLeftIndex, Quaternion dir, bool flip) {
-		//first new tri
-		addTri(botRightIndex, topRightIndex, botLeftIndex, dir, flip);
-		//second new tri
-		addTri(topRightIndex, topLeftIndex, botLeftIndex, dir, flip);
-	}
 
 	//simple helper method to add 3 points to the triangles list
-	public void addTri(int index1, int index2, int index3, Quaternion dir, bool flip = false) {
+	public void addTri(int index1, int index2, int index3, bool flip = false) {
 		triangles.Add(flip ? index3 : index1);
 		triangles.Add(index2);
 		triangles.Add(flip ? index1 : index3);

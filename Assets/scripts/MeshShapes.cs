@@ -22,7 +22,7 @@ public class MeshShapes : MonoBehaviour {
 			verts = generateSpiral(float.Parse(args[0]), float.Parse(args[1]), int.Parse(args[2]), float.Parse(args[3]));
 		}
 		else if (shape == "cylinder") {
-			verts = generateCylinder(float.Parse(args[0]), float.Parse(args[1]), int.Parse(args[2]), System.Convert.ToBoolean(args[3]));
+			verts = generateCylinder(float.Parse(args[0]), float.Parse(args[1]), int.Parse(args[2]), args[3] == "1");
 		}
 		if (displace) {
 			displaceVerts(.2f, verts[0], verts[1]);
@@ -81,7 +81,7 @@ public class MeshShapes : MonoBehaviour {
 		float iterAngle = 360 / (float)segs;
 		float iterExtents = extents / (float)segs;
 		for (int i = 0; i < segs; ++i) {
-			meshGenerator.propagateQuad(pos, rot, width, iterExtents, false); //generate back-facing quad (flipped normal)
+			//meshGenerator.propagateQuad(pos, rot, width, iterExtents, false); //generate back-facing quad (flipped normal)
 			pos = meshGenerator.propagateQuad(pos, rot, width, iterExtents, true); //generate forward-facing quad and update current vertex position
 			rot = meshGenerator.rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
 		}
@@ -90,13 +90,13 @@ public class MeshShapes : MonoBehaviour {
 		}
 
 		//cap front and back of cylinder
-		if (cap) {
+		/*if (cap) {
 			List<int> capVerts = new List<int>();
 			for (int i = 0; i < segs; ++i) {
 				capVerts += 
 			}
 			capHole(capVerts);
-		}
+		}*/
 		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
 	}
 

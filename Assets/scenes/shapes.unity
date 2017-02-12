@@ -173,7 +173,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96534bcea7b3b3a4492cb287e13886dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shape: cyllinder
+  shape: cylinder
   args:
   - 1.5
   - 4
@@ -316,7 +316,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96534bcea7b3b3a4492cb287e13886dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shape: cyllinder
+  shape: cylinder
   args:
   - 1.5
   - 4
@@ -405,7 +405,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96534bcea7b3b3a4492cb287e13886dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shape: cyllinder
+  shape: cylinder
   args:
   - 1.5
   - 4
@@ -739,7 +739,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96534bcea7b3b3a4492cb287e13886dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shape: cyllinder
+  shape: cylinder
   args:
   - 1.5
   - 4
