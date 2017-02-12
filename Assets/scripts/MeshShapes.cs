@@ -84,7 +84,7 @@ public class MeshShapes : MonoBehaviour {
 		List<int> backVerts = new List<int>();
 		for (int i = 0; i < segs; ++i) {
 			
-			if (!cap) {
+			if (!cap) { //don't bother generating interior faces if we are capped, since they will not be visible anyway
 				meshGenerator.propagateQuad(pos, rot, width, iterExtents, false); //generate forward-facing quad and update current vertex position
 			}
 			pos = meshGenerator.propagateQuad(pos, rot, width, iterExtents, true); //generate back-facing quad (flipped normal)
@@ -101,16 +101,27 @@ public class MeshShapes : MonoBehaviour {
 		}
 
 		if (cap) { //cap front and back of cylinder
-			generateCap(frontVerts);
-			generateCap(backVerts,true);			
+			generateCap(frontVerts,false,false);
+			generateCap(backVerts,true,false);			
 		}
 		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
 	}
 
 	//generate cap-faces between verts list
-	public void generateCap(List<int> verts, bool flip = false) {
+	public void generateCap(List<int> verts, bool flip = false, bool createCenter = false) {
+		Vector3 center = meshGenerator.vertices[verts[0]];
+		if (createCenter) {
+			//calculate center position
+			for (int i = 1; i < verts.Count; ++i) {
+				center += meshGenerator.vertices[verts[0]];
+			}
+			center /= (float)verts.Count;
+		}
+		//Debug.Log(center);
+		//add center as new vert, with two other reference verts to get the normal right
+		meshGenerator.generateQuad(meshGenerator.vertices[verts[flip ? 1 : 0]], meshGenerator.vertices[verts[flip ? 0 : 1]], center);
 		for (int i = 1; i < verts.Count - 1; ++i) {
-			meshGenerator.generateQuad(meshGenerator.vertices[verts[0]], meshGenerator.vertices[verts[i + (flip ? 1 : 0)]], meshGenerator.vertices[verts[i + (flip ? 0 : 1)]]);
+			meshGenerator.generateQuad(meshGenerator.vertices[verts[i + (flip ? 1 : 0)]], meshGenerator.vertices[verts[i + (flip ? 0 : 1)]], center);
 		}
 	}
 

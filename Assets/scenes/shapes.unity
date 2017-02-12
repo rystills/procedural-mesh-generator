@@ -179,7 +179,7 @@ MonoBehaviour:
   - 4
   - 3
   - 1
-  displace: 1
+  displace: 0
 --- !u!1 &452119670
 GameObject:
   m_ObjectHideFlags: 0

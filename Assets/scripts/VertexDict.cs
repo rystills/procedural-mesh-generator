@@ -72,7 +72,11 @@ public class VertexDict {
 		Quaternion smallestKey = Quaternion.identity;
 		float smallestDiff = smoothnessFloatTolerance + quatSmoothnessThreshhold;
 		foreach (Quaternion key in vertDict.Keys) {
-			float angleDiff = Quaternion.Angle(Quaternion.Euler(normal.x,normal.y,normal.z), key);
+			//Debug.Log(Quaternion.Euler(normal.x, normal.y, normal.z));
+			//Debug.Log(key);
+			Debug.Log(normal);
+			Quaternion curAngle = Quaternion.Euler(normal.x, normal.y, normal.z);
+			float angleDiff = (curAngle == key) ? 0 : Quaternion.Angle(Quaternion.Euler(normal.x,normal.y,normal.z), key);
 			if (angleDiff <= smallestDiff) {
 				smallestDiff = angleDiff;
 				smallestKey = key;
