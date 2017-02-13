@@ -74,6 +74,9 @@ public class GenerateMesh : MonoBehaviour {
 
 	public Vector3 generateQuad(Vector3 botRightPos, Vector3 topRightPos, Vector3 botLeftPos, Vector3? topLeftPos = null, float vertSmoothnessThreshold = 0, string returnPos = "botLeft", string uvMode = "per face") {
 		//calculate normal dir
+		//Debug.Log("pos0: " + botRightPos);
+		//Debug.Log("pos1: " + topRightPos);
+		//Debug.Log("pos2: " + botLeftPos);
 		Vector3 normal = calculateNormal(botRightPos, topRightPos, botLeftPos);
 
 		//generate botRight vert

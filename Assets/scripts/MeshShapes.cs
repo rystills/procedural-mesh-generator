@@ -109,19 +109,28 @@ public class MeshShapes : MonoBehaviour {
 
 	//generate cap-faces between verts list
 	public void generateCap(List<int> verts, bool flip = false, bool createCenter = false) {
-		Vector3 center = meshGenerator.vertices[verts[0]];
+		Vector3 center = Vector3.zero;
 		if (createCenter) {
 			//calculate center position
-			for (int i = 1; i < verts.Count; ++i) {
+			for (int i = 0; i < verts.Count; ++i) {
 				center += meshGenerator.vertices[verts[0]];
 			}
 			center /= (float)verts.Count;
 		}
+		else {
+			center = meshGenerator.vertices[verts[0]];
+		}
 		//Debug.Log(center);
 		//add center as new vert, with two other reference verts to get the normal right
-		meshGenerator.generateQuad(meshGenerator.vertices[verts[flip ? 1 : 0]], meshGenerator.vertices[verts[flip ? 0 : 1]], center);
-		for (int i = 1; i < verts.Count - 1; ++i) {
+		//meshGenerator.generateQuad(meshGenerator.vertices[verts[flip ? 1 : 0]], meshGenerator.vertices[verts[flip ? 0 : 1]], center);
+		for (int i = createCenter ? 0 : 1; i < verts.Count - 1; ++i) {
+			Debug.Log("vector0: " + meshGenerator.vertices[verts[i + (flip ? 1 : 0)]]);
+			Debug.Log("vector1: " + meshGenerator.vertices[verts[i + (flip ? 0 : 1)]]);
+			Debug.Log("vector2: " + (center));
 			meshGenerator.generateQuad(meshGenerator.vertices[verts[i + (flip ? 1 : 0)]], meshGenerator.vertices[verts[i + (flip ? 0 : 1)]], center);
+		}
+		if (createCenter) {
+			meshGenerator.generateQuad(meshGenerator.vertices[verts[flip ? 0 : verts.Count - 1]], meshGenerator.vertices[verts[flip ? verts.Count - 1 : 0]], center);
 		}
 	}
 
