@@ -101,36 +101,36 @@ public class MeshShapes : MonoBehaviour {
 		}
 
 		if (cap) { //cap front and back of cylinder
-			generateCap(frontVerts,false,false);
-			generateCap(backVerts,true,false);			
+			generateCapCenter(frontVerts,false);
+			generateCapCenter(backVerts,true);			
 		}
 		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
 	}
 
-	//generate cap-faces between verts list
-	public void generateCap(List<int> verts, bool flip = false, bool createCenter = false) {
+	//generate cap-faces between verts, using a new center vert to conncet all of the faces
+	public void generateCapCenter(List<int> verts, bool flip = false) {
+		//calculate center position
 		Vector3 center = Vector3.zero;
-		if (createCenter) {
-			//calculate center position
-			for (int i = 0; i < verts.Count; ++i) {
-				center += meshGenerator.vertices[verts[0]];
-			}
-			center /= (float)verts.Count;
+		for (int i = 0; i < verts.Count; ++i) {
+			Debug.Log("Center before: " +center);
+			center += meshGenerator.vertices[verts[i]];
+			Debug.Log("vector3 added: " + meshGenerator.vertices[verts[0]]);
+			Debug.Log("Center after: " +center);
 		}
-		else {
-			center = meshGenerator.vertices[verts[0]];
-		}
-		//Debug.Log(center);
+		center /= (float)verts.Count;
+		Debug.Log("center: " + center + ", pos0: " + meshGenerator.vertices[verts[0]] + ", pos1: " + meshGenerator.vertices[verts[1]]);
 		//add center as new vert, with two other reference verts to get the normal right
-		//meshGenerator.generateQuad(meshGenerator.vertices[verts[flip ? 1 : 0]], meshGenerator.vertices[verts[flip ? 0 : 1]], center);
-		for (int i = createCenter ? 0 : 1; i < verts.Count - 1; ++i) {
-			Debug.Log("vector0: " + meshGenerator.vertices[verts[i + (flip ? 1 : 0)]]);
-			Debug.Log("vector1: " + meshGenerator.vertices[verts[i + (flip ? 0 : 1)]]);
-			Debug.Log("vector2: " + (center));
+		for (int i = 0; i < verts.Count - 1; ++i) {
 			meshGenerator.generateQuad(meshGenerator.vertices[verts[i + (flip ? 1 : 0)]], meshGenerator.vertices[verts[i + (flip ? 0 : 1)]], center);
 		}
-		if (createCenter) {
-			meshGenerator.generateQuad(meshGenerator.vertices[verts[flip ? 0 : verts.Count - 1]], meshGenerator.vertices[verts[flip ? verts.Count - 1 : 0]], center);
+		//generate final face between last vert, first vert, and center
+		meshGenerator.generateQuad(meshGenerator.vertices[verts[flip ? 0 : verts.Count - 1]], meshGenerator.vertices[verts[flip ? verts.Count - 1 : 0]], center);
+	}
+
+	//generate cap-faces between verts, using the first vert to connect all of the faces
+	public void generateCapEdge(List<int> verts, bool flip = false) {
+		for (int i = 1; i < verts.Count - 1; ++i) {
+			meshGenerator.generateQuad(meshGenerator.vertices[verts[0]], meshGenerator.vertices[verts[i + (flip ? 1 : 0)]], meshGenerator.vertices[verts[i + (flip ? 0 : 1)]]);
 		}
 	}
 

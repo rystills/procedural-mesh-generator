@@ -1,0 +1,3 @@
+Wireframe environment
+-level generated using a combination of several of the mesh generation techniques
+-objects mostly consisting of a wireframe texture, such that only edges are visible in a neon color, and the rest of the faces are transparent
