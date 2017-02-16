@@ -24,6 +24,9 @@ public class MeshShapes : MonoBehaviour {
 		else if (shape == "cylinder") {
 			verts = generateCylinder(float.Parse(args[0]), float.Parse(args[1]), int.Parse(args[2]), args[3] == "1");
 		}
+		else if (shape == "sphere") {
+			verts = generateSphere(float.Parse(args[0]), float.Parse(args[1]));
+		}
 		if (displace) {
 			displaceVerts(.2f, verts[0], verts[1]);
 		}
@@ -51,6 +54,41 @@ public class MeshShapes : MonoBehaviour {
 				meshGenerator.vertices[curVerts[i].verticesIndex] += (meshGenerator.normals[curVerts[0].verticesIndex].normalized * curDisp);
 			}
 		}
+	}
+
+	//construct a sphere, with segs connecting verts which are radius distance from position
+	List<int> generateSphere(float radius, float  segs) {
+		int startVertIndex = meshGenerator.vertices.Count;
+		float increment = 360f / segs;
+		Vector3 center = Vector3.zero;
+		for (float i = -90; i < 90; i += increment) {
+			for (float j = 0; j < 360; j += increment) {
+				//generate direction vectors for current point, one forward by i, one forward by j, and one forward by i and j
+				Vector3 dir1 = Quaternion.Euler(i, j, 0) * Vector3.forward;
+				Vector3 dir2 = Quaternion.Euler(i + increment, j, 0) * Vector3.forward;
+				Vector3 dir3 = Quaternion.Euler(i, j + increment, 0) * Vector3.forward;
+				Vector3 dir4 = Quaternion.Euler(i + increment, j + increment, 0) * Vector3.forward;
+
+				//generate 4 position vectors from center point and direction vectors
+				Vector3 pos1 = center + (dir1.normalized * radius);
+				Vector3 pos2 = center + (dir2.normalized * radius);
+				Vector3 pos3 = center + (dir3.normalized * radius);
+				Vector3 pos4 = center + (dir4.normalized * radius);
+
+				//call generateQuad on these points
+				if (i == -90) { //we are at the bottom pole; just generate a tri
+					meshGenerator.generateQuad(pos1, pos2, pos4);
+				}
+				if (i+increment >= 90) { //we are just before the top pole; just generate a tri
+					meshGenerator.generateQuad(pos1, pos2, pos3);
+				}
+				else {
+					meshGenerator.generateQuad(pos1, pos2, pos3, pos4);
+				}
+			}
+		}
+		
+		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
 	}
 
 	//construct a spiral, with segs quads of width, extents, rotating each quad by iterAngle
@@ -112,10 +150,7 @@ public class MeshShapes : MonoBehaviour {
 		//calculate center position
 		Vector3 center = Vector3.zero;
 		for (int i = 0; i < verts.Count; ++i) {
-			Debug.Log("Center before: " +center);
 			center += meshGenerator.vertices[verts[i]];
-			Debug.Log("vector3 added: " + meshGenerator.vertices[verts[0]]);
-			Debug.Log("Center after: " +center);
 		}
 		center /= (float)verts.Count;
 		Debug.Log("center: " + center + ", pos0: " + meshGenerator.vertices[verts[0]] + ", pos1: " + meshGenerator.vertices[verts[1]]);
