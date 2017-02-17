@@ -25,7 +25,7 @@ public class MeshShapes : MonoBehaviour {
 			verts = generateCylinder(float.Parse(args[0]), float.Parse(args[1]), int.Parse(args[2]), args[3] == "1");
 		}
 		else if (shape == "sphere") {
-			verts = generateSphere(float.Parse(args[0]), float.Parse(args[1]));
+			verts = generateSphere(float.Parse(args[0]), float.Parse(args[1]), (args.Count >= 3 ? args[2] == "1" : false));
 		}
 		if (displace) {
 			displaceVerts(.2f, verts[0], verts[1]);
@@ -57,11 +57,12 @@ public class MeshShapes : MonoBehaviour {
 	}
 
 	//construct a sphere, with segs connecting verts which are radius distance from position
-	List<int> generateSphere(float radius, float  segs) {
+	List<int> generateSphere(float radius, float  segs, bool isHemisphere = false) {
 		int startVertIndex = meshGenerator.vertices.Count;
 		float increment = 360f / segs;
 		Vector3 center = Vector3.zero;
-		for (int sign = 1; sign >= -1; sign -= 2) { //iterate a hemisphere down from equator, then up from equator (if we don't break it up this way, the top pole ends up with peculiar geometry)
+		List<int> centerVerts = new List<int>();
+		for (int sign = 1; sign >= (isHemisphere ? 1 : -1); sign -= 2) { //iterate a hemisphere down from equator, then up from equator (if we don't break it up this way, the top pole ends up with peculiar geometry)
 			for (float i = 0; i < 90; i += increment) {
 				for (float j = 0; j < 360; j += increment) {
 					//generate direction vectors for current point, one forward by i, one forward by j, and one forward by i and j
@@ -83,8 +84,16 @@ public class MeshShapes : MonoBehaviour {
 					else {
 						meshGenerator.generateQuad(pos1, pos2, pos3, pos4);
 					}
+					if (i == 0 && isHemisphere) {
+						centerVerts.Add(meshGenerator.vertices.Count - 2);
+					}
 				}
 			}
+		}
+		
+		//if we are generating a hemisphere rather than a whole sphere, cap the exposed side
+		if (isHemisphere) {
+			generateCapCenter(centerVerts);
 		}
 		
 		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
@@ -152,7 +161,6 @@ public class MeshShapes : MonoBehaviour {
 			center += meshGenerator.vertices[verts[i]];
 		}
 		center /= (float)verts.Count;
-		Debug.Log("center: " + center + ", pos0: " + meshGenerator.vertices[verts[0]] + ", pos1: " + meshGenerator.vertices[verts[1]]);
 		//add center as new vert, with two other reference verts to get the normal right
 		for (int i = 0; i < verts.Count - 1; ++i) {
 			meshGenerator.generateQuad(meshGenerator.vertices[verts[i + (flip ? 1 : 0)]], meshGenerator.vertices[verts[i + (flip ? 0 : 1)]], center);

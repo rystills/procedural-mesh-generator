@@ -14,6 +14,11 @@ public class MeshEffects : MonoBehaviour {
 		meshGenerator = this.GetComponent<GenerateMesh>();
 	}
 
+	//rotate gameObject over time
+	void animateRotation(float xRot, float yRot, float zRot, float speed) {
+		transform.Rotate(new Vector3(xRot,yRot,zRot), speed * Time.deltaTime);
+	}
+
 	//wave vert groups by the first vert's normal for the sake of simplicity
 	void animateWave(float speed, float numWaves, float amplitude) {
 		int count = 0; //only increase count after each vert group, rather than each individual vert
@@ -31,6 +36,9 @@ public class MeshEffects : MonoBehaviour {
 	void Update () {
 		if (animMode == "wave") {
 			animateWave(float.Parse(args[0]), float.Parse(args[1]), float.Parse(args[2]));
+		}
+		else if (animMode == "rotate") {
+			animateRotation(float.Parse(args[0]), float.Parse(args[1]), float.Parse(args[2]), float.Parse(args[3]));
 		}
 		Mesh mesh = GetComponent<MeshFilter>().mesh;
 		mesh.vertices = meshGenerator.vertices.ToArray();

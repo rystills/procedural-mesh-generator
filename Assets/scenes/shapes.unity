@@ -290,7 +290,7 @@ GameObject:
   - component: {fileID: 808286554}
   - component: {fileID: 808286553}
   m_Layer: 0
-  m_Name: sphere
+  m_Name: hemisphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -302,13 +302,13 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 808286551}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: -0.17101015, y: -0.030153714, z: -0.17101015, w: 0.9698463}
   m_LocalPosition: {x: -1.5, y: 1.25, z: 2.27}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 2113932076}
   m_RootOrder: 5
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -20, y: 0, z: -20}
 --- !u!114 &808286553
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -323,7 +323,8 @@ MonoBehaviour:
   shape: sphere
   args:
   - 1
-  - 36
+  - 32
+  - 1
   displace: 0
 --- !u!114 &808286554
 MonoBehaviour:
@@ -331,16 +332,17 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 808286551}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9e5febc83875134409f25c8c85558fd8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animMode: wave
+  animMode: rotate
   args:
-  - 2
-  - 6
-  - 4
+  - 0
+  - 1
+  - 0
+  - 30
 --- !u!114 &808286555
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -363,7 +365,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ada869aeb39bfb0408fbeab76f97ecb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  material: {fileID: 2100000, guid: e3f2bd39b47c2ad4a9fe5b26f9e176ba, type: 2}
+  material: {fileID: 0}
   triangles: 
   vertices: []
   uvs: []
@@ -394,7 +396,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1140175121}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 4, y: 1.25, z: 2.27}
+  m_LocalPosition: {x: 3.06, y: 1.25, z: 2.27}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 2113932076}
