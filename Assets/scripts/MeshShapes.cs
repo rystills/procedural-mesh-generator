@@ -61,29 +61,28 @@ public class MeshShapes : MonoBehaviour {
 		int startVertIndex = meshGenerator.vertices.Count;
 		float increment = 360f / segs;
 		Vector3 center = Vector3.zero;
-		for (float i = -90; i < 90; i += increment) {
-			for (float j = 0; j < 360; j += increment) {
-				//generate direction vectors for current point, one forward by i, one forward by j, and one forward by i and j
-				Vector3 dir1 = Quaternion.Euler(i, j, 0) * Vector3.forward;
-				Vector3 dir2 = Quaternion.Euler(i + increment, j, 0) * Vector3.forward;
-				Vector3 dir3 = Quaternion.Euler(i, j + increment, 0) * Vector3.forward;
-				Vector3 dir4 = Quaternion.Euler(i + increment, j + increment, 0) * Vector3.forward;
+		for (int sign = 1; sign >= -1; sign -= 2) { //iterate a hemisphere down from equator, then up from equator (if we don't break it up this way, the top pole ends up with peculiar geometry)
+			for (float i = 0; i < 90; i += increment) {
+				for (float j = 0; j < 360; j += increment) {
+					//generate direction vectors for current point, one forward by i, one forward by j, and one forward by i and j
+					Vector3 dir1 = Quaternion.Euler(i*sign, j*sign, 0) * Vector3.forward;
+					Vector3 dir2 = Quaternion.Euler((i + increment)* sign, j * sign, 0) * Vector3.forward;
+					Vector3 dir3 = Quaternion.Euler(i * sign, (j + increment)* sign, 0) * Vector3.forward;
+					Vector3 dir4 = Quaternion.Euler((i + increment) * sign, (j + increment) * sign, 0) * Vector3.forward;
 
-				//generate 4 position vectors from center point and direction vectors
-				Vector3 pos1 = center + (dir1.normalized * radius);
-				Vector3 pos2 = center + (dir2.normalized * radius);
-				Vector3 pos3 = center + (dir3.normalized * radius);
-				Vector3 pos4 = center + (dir4.normalized * radius);
+					//generate 4 position vectors from center point and direction vectors
+					Vector3 pos1 = center + (dir1.normalized * radius);
+					Vector3 pos2 = center + (dir2.normalized * radius);
+					Vector3 pos3 = center + (dir3.normalized * radius);
+					Vector3 pos4 = center + (dir4.normalized * radius);
 
-				//call generateQuad on these points
-				if (i == -90) { //we are at the bottom pole; just generate a tri
-					meshGenerator.generateQuad(pos1, pos2, pos4);
-				}
-				if (i+increment >= 90) { //we are just before the top pole; just generate a tri
-					meshGenerator.generateQuad(pos1, pos2, pos3);
-				}
-				else {
-					meshGenerator.generateQuad(pos1, pos2, pos3, pos4);
+					//call generateQuad on these points
+					if (i + increment >= 90) { //we are just before the current pole; generate a tri to the pole rather than a quad
+						meshGenerator.generateQuad(pos1, pos2, pos3);
+					}
+					else {
+						meshGenerator.generateQuad(pos1, pos2, pos3, pos4);
+					}
 				}
 			}
 		}
