@@ -61,7 +61,7 @@ public class VertexDict {
 	}
 
 	//get vertex at position pos with normal normal
-	public VertexData getVert(Vector3 pos, Vector3 normal, float quatSmoothnessThreshhold = 0) {
+	public VertexData getVert(Vector3 pos, Quaternion normal, float quatSmoothnessThreshhold = 0) {
 		Dictionary<Quaternion, VertexData> vertDict = getVertDict(pos);
 		if (vertDict == null) { //vector not found at position pos
 			return null;
@@ -72,7 +72,7 @@ public class VertexDict {
 		Quaternion smallestKey = Quaternion.identity;
 		float smallestDiff = smoothnessFloatTolerance + quatSmoothnessThreshhold;
 		foreach (Quaternion key in vertDict.Keys) {
-			float angleDiff = Quaternion.Angle(Quaternion.Euler(normal.x, normal.y, normal.z), key);
+			float angleDiff = Quaternion.Angle(normal, key);
 			if (angleDiff <= smallestDiff) {
 				smallestDiff = angleDiff;
 				smallestKey = key;
@@ -83,6 +83,10 @@ public class VertexDict {
 			return vertDict[smallestKey];
 		}
 		return null; //a vector was found at this position, but no matching normal within tolerance was found at that position
+	}
+
+	public VertexData getVert(Vector3 pos, Vector3 normal, float quatSmoothnessThreshhold = 0) {
+		return getVert(pos, Quaternion.Euler(normal.x, normal.y, normal.z), quatSmoothnessThreshhold);
 	}
 }
 

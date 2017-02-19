@@ -150,7 +150,7 @@ public class GenerateMesh : MonoBehaviour {
 		if (uvMode == "per face") {
 			uvs.Add(pos == a ? new Vector2(0, 0) : pos == b ? new Vector2(0, 1) : pos == c ? new Vector2(1, 0) : new Vector2(1, 1));
 		}
-		else if (uvMode == "per face merge duplicates") {
+		else if (uvMode == "per face merge duplicates") { //hacky, legacy solution to UV mapping a line of quads with merged verts
 			int id = vertData.verticesIndex;
 			if (id <= 3) {
 				id = 0;

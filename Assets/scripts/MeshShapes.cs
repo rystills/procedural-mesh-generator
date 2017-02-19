@@ -8,7 +8,7 @@ public class MeshShapes : MonoBehaviour {
 
 	public string shape;
 	public List<string> args;
-	public bool displace;
+	public float displacementStrength;
 
 	// Use this for initialization
 	void Start() {
@@ -27,8 +27,11 @@ public class MeshShapes : MonoBehaviour {
 		else if (shape == "sphere") {
 			verts = generateSphere(float.Parse(args[0]), float.Parse(args[1]), (args.Count >= 3 ? args[2] == "1" : false));
 		}
-		if (displace) {
-			displaceVerts(.2f, verts[0], verts[1]);
+		else if (shape == "plane") {
+			verts = generatePlane(float.Parse(args[0]), float.Parse(args[1]), float.Parse(args[2]), float.Parse(args[3]));
+		}
+		if (displacementStrength > 0) {
+			displaceVerts(displacementStrength, verts[0], verts[1]);
 		}
 		meshGenerator.finalizeMesh();
 
@@ -54,6 +57,25 @@ public class MeshShapes : MonoBehaviour {
 				meshGenerator.vertices[curVerts[i].verticesIndex] += (meshGenerator.normals[curVerts[0].verticesIndex].normalized * curDisp);
 			}
 		}
+	}
+
+	//construct a plane, with lSegs and wSegs segs totaling length and width
+	List<int> generatePlane(float lSegs, float wSegs, float length, float width) {
+		int startVertIndex = meshGenerator.vertices.Count;
+		float lIncrement = length / lSegs;
+		float wIncrement = width / wSegs;
+		Quaternion rot = meshGenerator.rotateQuaternion(new Quaternion(0,0,0,1),Vector3.forward,90);
+		for (int i = 0; i < lSegs; ++i) {
+			for (int r = 0; r < wSegs; ++r) {
+				meshGenerator.propagateQuad(new Vector3(i*wIncrement, 0,r * lIncrement), rot, lIncrement, wIncrement); 
+
+				for (int j = 0; j < 4; ++j) { //manually map vertices to a plan
+					int curIndex = meshGenerator.vertices.Count - j - 1;
+					meshGenerator.uvs[curIndex] = new Vector2(meshGenerator.vertices[curIndex].x, meshGenerator.vertices[curIndex].z);
+				}
+			}
+		}
+		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
 	}
 
 	//construct a sphere, with segs connecting verts which are radius distance from position
