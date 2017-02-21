@@ -30,6 +30,9 @@ public class MeshShapes : MonoBehaviour {
 		else if (shape == "plane") {
 			verts = generatePlane(float.Parse(args[0]), float.Parse(args[1]), float.Parse(args[2]), float.Parse(args[3]));
 		}
+		else if (shape == "flower") {
+			verts = generateFlower(int.Parse(args[0]));
+		}
 		if (displacementStrength > 0) {
 			displaceVerts(displacementStrength, verts[0], verts[1]);
 		}
@@ -43,6 +46,13 @@ public class MeshShapes : MonoBehaviour {
 		}
 		debugString += ": " + (endTime - startTime) + " seconds";
 		Debug.Log(debugString);
+	}
+
+	//apply a movement by moveBy to verts starting at startIndex and ending at endIndex (both inclusive)
+	public void moveVerts(Vector3 moveBy, int startIndex, int endIndex) {
+		for (int i = startIndex; i < endIndex; ++i) {
+			meshGenerator.vertices[i] += moveBy;
+		}
 	}
 
 	//apply a random displacement between -maxDisp and +maxDisp from vert startIndex to vert endIndex (both inclusive) - for simplicity, each vertex uses the normal of the first vert in its group
@@ -78,20 +88,35 @@ public class MeshShapes : MonoBehaviour {
 		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
 	}
 
+	List<int> generateFlower(int numPetals) {
+		int startVertIndex = meshGenerator.vertices.Count;
+		Quaternion rot = new Quaternion(0, 0, 0, 1);
+		generateCylinder(.2f, .025f, 4,true);
+		generateSphere(.05f, 8, true, new Vector3(0,0,0),meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1),Vector3.left,90));
+		transform.rotation = meshGenerator.rotateQuaternion(transform.rotation, Vector3.left, -90);
+		return new List<int> {startVertIndex, meshGenerator.vertices.Count - 1};
+	}
+
 	//construct a sphere, with segs connecting verts which are radius distance from position
-	List<int> generateSphere(float radius, float  segs, bool isHemisphere = false) {
+	List<int> generateSphere(float radius, float  segs, bool isHemisphere = false, Vector3? basePos = null, Quaternion? baseRot = null) {
+		if (!baseRot.HasValue) {
+			baseRot = new Quaternion(0, 0, 0, 1);
+		}
+		if (!basePos.HasValue) {
+			basePos = Vector3.zero;
+		}
 		int startVertIndex = meshGenerator.vertices.Count;
 		float increment = 360f / segs;
-		Vector3 center = Vector3.zero;
+		Vector3 center = basePos.Value;
 		List<int> centerVerts = new List<int>();
 		for (int sign = 1; sign >= (isHemisphere ? 1 : -1); sign -= 2) { //iterate a hemisphere down from equator, then up from equator (if we don't break it up this way, the top pole ends up with peculiar geometry)
 			for (float i = 0; i < 90; i += increment) {
 				for (float j = 0; j < 360; j += increment) {
 					//generate direction vectors for current point, one forward by i, one forward by j, and one forward by i and j
-					Vector3 dir1 = Quaternion.Euler(i*sign, j*sign, 0) * Vector3.forward;
-					Vector3 dir2 = Quaternion.Euler((i + increment)* sign, j * sign, 0) * Vector3.forward;
-					Vector3 dir3 = Quaternion.Euler(i * sign, (j + increment)* sign, 0) * Vector3.forward;
-					Vector3 dir4 = Quaternion.Euler((i + increment) * sign, (j + increment) * sign, 0) * Vector3.forward;
+					Vector3 dir1 = baseRot.Value * (Quaternion.Euler(i * sign, j * sign, 0) * Vector3.forward);
+					Vector3 dir2 = baseRot.Value * (Quaternion.Euler((i + increment)* sign, j * sign, 0) * Vector3.forward);
+					Vector3 dir3 = baseRot.Value * (Quaternion.Euler(i * sign, (j + increment)* sign, 0) * Vector3.forward);
+					Vector3 dir4 = baseRot.Value * (Quaternion.Euler((i + increment) * sign, (j + increment) * sign, 0) * Vector3.forward);
 
 					//generate 4 position vectors from center point and direction vectors
 					Vector3 pos1 = center + (dir1.normalized * radius);
@@ -112,7 +137,7 @@ public class MeshShapes : MonoBehaviour {
 				}
 			}
 		}
-		
+		Debug.Log(centerVerts);
 		//if we are generating a hemisphere rather than a whole sphere, cap the exposed side
 		if (isHemisphere) {
 			generateCapCenter(centerVerts);
