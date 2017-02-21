@@ -90,11 +90,16 @@ public class MeshShapes : MonoBehaviour {
 
 	List<int> generateFlower(int numPetals) {
 		int startVertIndex = meshGenerator.vertices.Count;
-		Quaternion rot = new Quaternion(0, 0, 0, 1);
-		generateCylinder(.2f, .025f, 4,true, "centerCap");
-		generateSphere(.05f, 8, true, new Vector3(0,0,0),meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1),Vector3.left,90));
+		for (int i = 0; i < 1; ++i) {
+			Vector3 curPos = new Vector3(i, 0, 0);
+			for (int r = 0; r < 1; ++r) {
+				generateCylinder(.2f, .025f, 3, true, "centerCap", curPos);
+				generateSphere(.05f, 4, true, curPos, meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1), Vector3.left, -90));
+				curPos.y += 1;
+			}
+		}
 		transform.rotation = meshGenerator.rotateQuaternion(transform.rotation, Vector3.left, -90);
-		return new List<int> {startVertIndex, meshGenerator.vertices.Count - 1};
+		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
 	}
 
 	//construct a sphere, with segs connecting verts which are radius distance from position
@@ -132,12 +137,12 @@ public class MeshShapes : MonoBehaviour {
 						meshGenerator.generateQuad(pos1, pos2, pos3, pos4);
 					}
 					if (i == 0 && isHemisphere) {
-						centerVerts.Add(meshGenerator.vertices.Count - 2);
+						//if we have so few segments that we are just generating a diamond, need to shift back the vert indices here or we will get the top vert instead
+						centerVerts.Add(meshGenerator.vertices.Count - (segs <= 4 ? 3 : 2));
 					}
 				}
 			}
 		}
-		Debug.Log(centerVerts);
 		//if we are generating a hemisphere rather than a whole sphere, cap the exposed side
 		if (isHemisphere) {
 			generateCapCenter(centerVerts);
@@ -205,7 +210,7 @@ public class MeshShapes : MonoBehaviour {
 		}
 
 		if (startType == "centerCap") {
-			moveVerts(Vector3.zero - calculateCenter(backVerts), startVertIndex, meshGenerator.vertices.Count - 1);
+			moveVerts(pos - calculateCenter(backVerts), startVertIndex, meshGenerator.vertices.Count - 1);
 		}
 
 		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
