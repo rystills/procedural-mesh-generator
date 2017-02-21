@@ -91,7 +91,7 @@ public class MeshShapes : MonoBehaviour {
 	List<int> generateFlower(int numPetals) {
 		int startVertIndex = meshGenerator.vertices.Count;
 		Quaternion rot = new Quaternion(0, 0, 0, 1);
-		generateCylinder(.2f, .025f, 4,true);
+		generateCylinder(.2f, .025f, 4,true, "centerCap");
 		generateSphere(.05f, 8, true, new Vector3(0,0,0),meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1),Vector3.left,90));
 		transform.rotation = meshGenerator.rotateQuaternion(transform.rotation, Vector3.left, -90);
 		return new List<int> {startVertIndex, meshGenerator.vertices.Count - 1};
@@ -166,11 +166,17 @@ public class MeshShapes : MonoBehaviour {
 	}
 
 	//construct a segs-sided cylinder with width and extents
-	List<int> generateCylinder(float width, float extents, int segs, bool cap = false) {
+	List<int> generateCylinder(float width, float extents, int segs, bool cap = false, string startType = "edge", Vector3? basePos = null, Quaternion? baseRot = null) {
+		if (!baseRot.HasValue) {
+			baseRot = new Quaternion(0, 0, 0, 1);
+		}
+		if (!basePos.HasValue) {
+			basePos = Vector3.zero;
+		}
 		int startVertIndex = meshGenerator.vertices.Count;
 		Vector3 rotAxis = Vector3.forward;
-		Quaternion rot = new Quaternion(0, 0, 0, 1);
-		Vector3 pos = new Vector3(0, 0, 0);
+		Quaternion rot = baseRot.Value;
+		Vector3 pos = basePos.Value;
 		float iterAngle = 360 / (float)segs;
 		float iterExtents = extents / (float)segs;
 		List<int> frontVerts = new List<int>();
@@ -197,23 +203,34 @@ public class MeshShapes : MonoBehaviour {
 			generateCapCenter(frontVerts,false);
 			generateCapCenter(backVerts,true);			
 		}
+
+		if (startType == "centerCap") {
+			moveVerts(Vector3.zero - calculateCenter(backVerts), startVertIndex, meshGenerator.vertices.Count - 1);
+		}
+
 		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
 	}
 
-	//generate cap-faces between verts, using a new center vert to conncet all of the faces
-	public void generateCapCenter(List<int> verts, bool flip = false) {
-		//calculate center position
+	//calculate the center position of a list of verts
+	Vector3 calculateCenter(List<int> verts) {
 		Vector3 center = Vector3.zero;
 		for (int i = 0; i < verts.Count; ++i) {
 			center += meshGenerator.vertices[verts[i]];
 		}
-		center /= (float)verts.Count;
+		return center / (float)verts.Count;
+	}
+
+	//generate cap-faces between verts, using a new center vert to conncet all of the faces
+	public Vector3 generateCapCenter(List<int> verts, bool flip = false) {
+		//calculate center position
+		Vector3 center = calculateCenter(verts);
 		//add center as new vert, with two other reference verts to get the normal right
 		for (int i = 0; i < verts.Count - 1; ++i) {
 			meshGenerator.generateQuad(meshGenerator.vertices[verts[i + (flip ? 1 : 0)]], meshGenerator.vertices[verts[i + (flip ? 0 : 1)]], center);
 		}
 		//generate final face between last vert, first vert, and center
 		meshGenerator.generateQuad(meshGenerator.vertices[verts[flip ? 0 : verts.Count - 1]], meshGenerator.vertices[verts[flip ? verts.Count - 1 : 0]], center);
+		return center;
 	}
 
 	//generate cap-faces between verts, using the first vert to connect all of the faces
