@@ -70,7 +70,7 @@ public class MeshShapes : MonoBehaviour {
 	}
 
 	//construct a plane, with lSegs and wSegs segs totaling length and width
-	List<int> generatePlane(float lSegs, float wSegs, float length, float width, Vector3? basePos = null, Quaternion? baseRot = null) {
+	List<int> generatePlane(float lSegs, float wSegs, float length, float width, Vector3? basePos = null, Quaternion? baseRot = null, bool doubleSided = false) {
 		if (!baseRot.HasValue) {
 			baseRot = new Quaternion(0, 0, 0, 1);
 		}
@@ -88,6 +88,9 @@ public class MeshShapes : MonoBehaviour {
 		for (int i = 0; i < lSegs; ++i) {
 			Vector3 curPos = basePos.Value + (forwardDir.normalized * (i * lIncrement));
 			for (int r = 0; r < wSegs; ++r) {
+				if (doubleSided) {
+					meshGenerator.propagateQuad(curPos, baseRot.Value, lIncrement, wIncrement, true);
+				}
 				curPos = meshGenerator.propagateQuad(curPos, baseRot.Value, lIncrement, wIncrement); 
 				for (int j = 0; j < 4; ++j) { //manually map vertices to a plan
 					int curIndex = meshGenerator.vertices.Count - j - 1;
@@ -100,16 +103,22 @@ public class MeshShapes : MonoBehaviour {
 
 	List<int> generateFlower(int numPetals) {
 		int startVertIndex = meshGenerator.vertices.Count;
+		int pedalNum = 3;
 		for (int i = 0; i < 2; ++i) {
 			Vector3 curPos = new Vector3(i, 0, 0);
 			for (int r = 0; r < 2; ++r) {
-				generateCylinder(.2f, .025f, 4, true, "centerCap", curPos);
-				int pedalNum = Random.Range(3, 8);
+				generateCylinder(.2f, .025f, 3, true, "centerCap", curPos);
+				//int pedalNum = Random.Range(3, 8);
+				Quaternion rot = meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1), Vector3.left, 45);
+				rot = meshGenerator.rotateQuaternion(rot, Vector3.up, 50);
+				float rotIncr = 360f / pedalNum;
 				for (int j = 0; j < pedalNum; ++j) {
-					generatePlane(1, 1, .1f, .1f,curPos,meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1),Vector3.forward,90));
+					generatePlane(1, 1, .1f, .1f,curPos,rot,true);
+					rot = meshGenerator.rotateQuaternion(rot, Vector3.left, rotIncr);
 				}
 				///generateSphere(.05f, 4, true, curPos, meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1), Vector3.left, -90));
 				curPos.y += 1;
+				pedalNum++;
 			}
 		}
 		transform.rotation = meshGenerator.rotateQuaternion(transform.rotation, Vector3.left, -90);
