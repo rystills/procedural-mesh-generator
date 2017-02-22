@@ -21,8 +21,8 @@ public class VertexDict {
 	}
 
 	//get all vertices at position pos, regardless of normal dir
-	public VertexData[] getVerts(Vector3 pos) {
-		return getVertDict(pos).Values.ToArray();
+	public Dictionary<Quaternion,VertexData>.ValueCollection getVerts(Vector3 pos) {
+		return getVertDict(pos).Values;
 	}
 
 	//add a vert at position pos with normal normal

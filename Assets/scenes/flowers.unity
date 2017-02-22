@@ -202,7 +202,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &667193067
 Transform:
   m_ObjectHideFlags: 0
@@ -323,8 +323,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shape: plane
   args:
-  - 200
-  - 200
+  - 20
+  - 20
   - 50
   - 50
   displacementStrength: 0.075
