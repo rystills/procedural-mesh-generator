@@ -50,7 +50,7 @@ public class MeshShapes : MonoBehaviour {
 
 	//apply a movement by moveBy to verts starting at startIndex and ending at endIndex (both inclusive)
 	public void moveVerts(Vector3 moveBy, int startIndex, int endIndex) {
-		for (int i = startIndex; i < endIndex; ++i) {
+		for (int i = startIndex; i <= endIndex; ++i) {
 			meshGenerator.vertices[i] += moveBy;
 		}
 	}
@@ -100,10 +100,10 @@ public class MeshShapes : MonoBehaviour {
 
 	List<int> generateFlower(int numPetals) {
 		int startVertIndex = meshGenerator.vertices.Count;
-		for (int i = 0; i < 8; ++i) {
+		for (int i = 0; i < 2; ++i) {
 			Vector3 curPos = new Vector3(i, 0, 0);
-			for (int r = 0; r < 8; ++r) {
-				generateCylinder(.2f, .025f, 3, true, "centerCap", curPos);
+			for (int r = 0; r < 2; ++r) {
+				generateCylinder(.2f, .025f, 4, true, "centerCap", curPos);
 				int pedalNum = Random.Range(3, 8);
 				for (int j = 0; j < pedalNum; ++j) {
 					generatePlane(1, 1, .1f, .1f,curPos,meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1),Vector3.forward,90));
