@@ -23,14 +23,17 @@ public class MeshEffects : MonoBehaviour {
 	void animateWave(float speed, float numWaves, float amplitude) {
 		int count = 0; //only increase count after each vert group, rather than each individual vert
 		foreach (Dictionary<Quaternion, VertexData> dict in meshGenerator.vertDict.verts.Values) {
-			VertexData[] curVerts = dict.Values.ToArray();
-			for (int i = 0; i < curVerts.Length; ++i) {
-				meshGenerator.vertices[curVerts[i].verticesIndex] = meshGenerator.vertices[curVerts[i].verticesIndex] + meshGenerator.normals[curVerts[0].verticesIndex].normalized *
+			VertexData vert0 = null;
+			foreach (VertexData vert in dict.Values) {
+				if (vert0 == null) {
+					vert0 = vert;
+				}
+				meshGenerator.vertices[vert.verticesIndex] = meshGenerator.vertices[vert.verticesIndex] + meshGenerator.normals[vert0.verticesIndex] *
 				(Mathf.Sin(speed * Time.time + (numWaves * 6.28f / (float)meshGenerator.vertDict.verts.Values.Count) * count) / (2000 / amplitude));
 			}
-			++count;
+		++count;
 		}	
-}
+	}
 	
 	// Update is called once per frame
 	void Update () {
@@ -42,7 +45,10 @@ public class MeshEffects : MonoBehaviour {
 		}
 		Mesh mesh = GetComponent<MeshFilter>().mesh;
 		mesh.vertices = meshGenerator.vertices.ToArray();
-		this.GetComponent<MeshCollider>().sharedMesh = mesh;
+		MeshCollider mc = this.GetComponent<MeshCollider>();
+		if (mc) {
+			mc.sharedMesh = mesh;
+		}
 
 	}
 }

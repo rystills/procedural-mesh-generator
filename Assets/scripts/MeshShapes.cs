@@ -90,9 +90,9 @@ public class MeshShapes : MonoBehaviour {
 
 	List<int> generateFlower(int numPetals) {
 		int startVertIndex = meshGenerator.vertices.Count;
-		for (int i = 0; i < 1; ++i) {
+		for (int i = 0; i < 20; ++i) {
 			Vector3 curPos = new Vector3(i, 0, 0);
-			for (int r = 0; r < 1; ++r) {
+			for (int r = 0; r < 29; ++r) {
 				generateCylinder(.2f, .025f, 3, true, "centerCap", curPos);
 				generateSphere(.05f, 4, true, curPos, meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1), Vector3.left, -90));
 				curPos.y += 1;

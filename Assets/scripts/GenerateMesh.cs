@@ -187,7 +187,7 @@ public class GenerateMesh : MonoBehaviour {
 	}
 
 	//construct the new mesh, and attach the appropriate components
-	public void finalizeMesh(bool useUnityNormals = false) {
+	public void finalizeMesh(bool useUnityNormals = false, bool smoothNormals = true, bool calculateBounds = false, bool calculateCollider = false) {
 		Mesh mesh = new Mesh();
 		MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
 		if (!meshFilter) {
@@ -197,12 +197,16 @@ public class GenerateMesh : MonoBehaviour {
 		mesh.vertices = vertices.ToArray();
 		mesh.triangles = triangles.ToArray();
 		mesh.uv = uvs.ToArray();
-		meshFilter.mesh.RecalculateBounds();
+		if (calculateBounds) {
+			meshFilter.mesh.RecalculateBounds();
+		}
 		if (useUnityNormals) {
 			meshFilter.mesh.RecalculateNormals();
 		}
 		else {
-			averageNormals();
+			if (smoothNormals) {
+				averageNormals();
+			}
 			meshFilter.mesh.normals = normals.ToArray();
 		}
 		MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
@@ -212,10 +216,13 @@ public class GenerateMesh : MonoBehaviour {
 		Renderer renderer = meshRenderer.GetComponent<Renderer>();
 		renderer.material.color = Color.blue;
 		MeshCollider meshCollider = gameObject.GetComponent<MeshCollider>();
-		if (!meshCollider) {
-			meshCollider = gameObject.AddComponent<MeshCollider>();
+		if (calculateCollider) {
+			if (!meshCollider) {
+				meshCollider = gameObject.AddComponent<MeshCollider>();
+			}
+			meshCollider.sharedMesh = mesh;
 		}
-		meshCollider.sharedMesh = mesh;
+		
 		if (material) {
 			renderer.material = material;
 		}
