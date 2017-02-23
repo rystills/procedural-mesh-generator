@@ -28,7 +28,7 @@ public class MeshShapes : MonoBehaviour {
 			verts = generateSphere(float.Parse(args[0]), float.Parse(args[1]), (args.Count >= 3 ? args[2] == "1" : false));
 		}
 		else if (shape == "plane") {
-			verts = generatePlane(float.Parse(args[0]), float.Parse(args[1]), float.Parse(args[2]), float.Parse(args[3]),null, meshGenerator.rotateQuaternion(new Quaternion(0,0,0,1),Vector3.forward,90));
+			verts = generatePlane(float.Parse(args[0]), float.Parse(args[1]), float.Parse(args[2]), float.Parse(args[3]), "edge", new Vector3(1, 0, 0), meshGenerator.rotateQuaternion(new Quaternion(0,0,0,1),Vector3.forward,90));
 		}
 		else if (shape == "flower") {
 			verts = generateFlower(int.Parse(args[0]));
@@ -48,7 +48,7 @@ public class MeshShapes : MonoBehaviour {
 		Debug.Log(debugString);
 	}
 
-	//apply a movement by moveBy to verts starting at startIndex and ending at endIndex (both inclusive)
+	//apply a movement by moveBy to verts starting at startIndex and ending at endIndex (both inclusive) - note that this does not modify the vertexDict keys!
 	public void moveVerts(Vector3 moveBy, int startIndex, int endIndex) {
 		for (int i = startIndex; i <= endIndex; ++i) {
 			meshGenerator.vertices[i] += moveBy;
@@ -70,7 +70,7 @@ public class MeshShapes : MonoBehaviour {
 	}
 
 	//construct a plane, with lSegs and wSegs segs totaling length and width
-	List<int> generatePlane(float lSegs, float wSegs, float length, float width, Vector3? basePos = null, Quaternion? baseRot = null, bool doubleSided = false) {
+	List<int> generatePlane(float lSegs, float wSegs, float length, float width, string startType = "edge", Vector3? basePos = null, Quaternion? baseRot = null, bool doubleSided = false) {
 		if (!baseRot.HasValue) {
 			baseRot = new Quaternion(0, 0, 0, 1);
 		}
@@ -82,9 +82,13 @@ public class MeshShapes : MonoBehaviour {
 		float wIncrement = width / wSegs;
 		Vector3 forwardDir = baseRot.Value * Vector3.forward;
 		Vector3 leftDir = meshGenerator.rotateQuaternion(baseRot.Value, new Vector3(1, 0, 0), 90) * Vector3.forward;
-		//Vector3 curPos = basePos.Value + (forwardDir.normalized * (i * lIncrement)) + (leftDir.normalized * (r * wIncrement));
-		
-		//new Vector3(curPos.x + i*wIncrement, curPos.y, curPos.z + r * lIncrement)
+
+		//move basePos so that basePos becomes the center, rather than the corner edge
+		if (startType == "centerCap") {
+			basePos -= forwardDir.normalized * (length / 2f);
+			basePos -= leftDir.normalized * (width / 2f);
+		}
+
 		for (int i = 0; i < lSegs; ++i) {
 			Vector3 curPos = basePos.Value + (forwardDir.normalized * (i * lIncrement));
 			for (int r = 0; r < wSegs; ++r) {
@@ -92,7 +96,7 @@ public class MeshShapes : MonoBehaviour {
 					meshGenerator.propagateQuad(curPos, baseRot.Value, lIncrement, wIncrement, true);
 				}
 				curPos = meshGenerator.propagateQuad(curPos, baseRot.Value, lIncrement, wIncrement); 
-				for (int j = 0; j < 4; ++j) { //manually map vertices to a plan
+				for (int j = 0; j < 4; ++j) { //manually map vertices to a plane
 					int curIndex = meshGenerator.vertices.Count - j - 1;
 					meshGenerator.uvs[curIndex] = new Vector2(meshGenerator.vertices[curIndex].x, meshGenerator.vertices[curIndex].z);
 				}
@@ -103,22 +107,22 @@ public class MeshShapes : MonoBehaviour {
 
 	List<int> generateFlower(int numPetals) {
 		int startVertIndex = meshGenerator.vertices.Count;
-		int pedalNum = 3;
+		int petalNum = 1;
 		for (int i = 0; i < 2; ++i) {
 			Vector3 curPos = new Vector3(i, 0, 0);
 			for (int r = 0; r < 2; ++r) {
 				generateCylinder(.2f, .025f, 3, true, "centerCap", curPos);
-				//int pedalNum = Random.Range(3, 8);
+				//int petalNum = Random.Range(3, 8);
 				Quaternion rot = meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1), Vector3.left, 45);
 				rot = meshGenerator.rotateQuaternion(rot, Vector3.up, 50);
-				float rotIncr = 360f / pedalNum;
-				for (int j = 0; j < pedalNum; ++j) {
-					generatePlane(1, 1, .1f, .1f,curPos,rot,true);
+				float rotIncr = 180f / petalNum;
+				for (int j = 0; j < petalNum; ++j) {
+					generatePlane(1, 1, .1f, .04f,"centerCap",curPos,rot,true);
 					rot = meshGenerator.rotateQuaternion(rot, Vector3.left, rotIncr);
 				}
 				///generateSphere(.05f, 4, true, curPos, meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1), Vector3.left, -90));
 				curPos.y += 1;
-				pedalNum++;
+				petalNum++;
 			}
 		}
 		transform.rotation = meshGenerator.rotateQuaternion(transform.rotation, Vector3.left, -90);
@@ -246,6 +250,15 @@ public class MeshShapes : MonoBehaviour {
 			center += meshGenerator.vertices[verts[i]];
 		}
 		return center / (float)verts.Count;
+	}
+
+	//calculate the center position of verts between startIndex and endIndex (both inclusive)
+	Vector3 calculateCenter(int startIndex, int endIndex) {
+		Vector3 center = Vector3.zero;
+		for (int i = startIndex; i <= endIndex; ++i) {
+			center += meshGenerator.vertices[i];
+		}
+		return center / (float)(endIndex - startIndex + 1);
 	}
 
 	//generate cap-faces between verts, using a new center vert to conncet all of the faces
