@@ -70,7 +70,7 @@ public class MeshShapes : MonoBehaviour {
 	}
 
 	//construct a plane, with lSegs and wSegs segs totaling length and width
-	List<int> generatePlane(float lSegs, float wSegs, float length, float width, string startType = "edge", Vector3? basePos = null, Quaternion? baseRot = null, bool doubleSided = false) {
+	List<int> generatePlane(float lSegs, float wSegs, float length, float width, string startType = "edge", Vector3? basePos = null, Quaternion? baseRot = null, bool doubleSided = false, string uvMode = "flat repeaet") {
 		if (!baseRot.HasValue) {
 			baseRot = new Quaternion(0, 0, 0, 1);
 		}
@@ -85,6 +85,9 @@ public class MeshShapes : MonoBehaviour {
 
 		//move basePos so that basePos becomes the center, rather than the corner edge
 		if (startType == "centerCap") {
+			basePos -= leftDir.normalized * (width / 2f);
+		}
+		else if (startType == "center") {
 			basePos -= forwardDir.normalized * (length / 2f);
 			basePos -= leftDir.normalized * (width / 2f);
 		}
@@ -96,9 +99,17 @@ public class MeshShapes : MonoBehaviour {
 					meshGenerator.propagateQuad(curPos, baseRot.Value, lIncrement, wIncrement, true);
 				}
 				curPos = meshGenerator.propagateQuad(curPos, baseRot.Value, lIncrement, wIncrement); 
-				for (int j = 0; j < 4; ++j) { //manually map vertices to a plane
+				for (int j = 0; j < 4; ++j) { //manually map vertices to a plane for now
 					int curIndex = meshGenerator.vertices.Count - j - 1;
-					meshGenerator.uvs[curIndex] = new Vector2(meshGenerator.vertices[curIndex].x, meshGenerator.vertices[curIndex].z);
+					if (uvMode == "flat repeat") { //cheap manual mapping method for long planes with the default orientation
+						meshGenerator.uvs[curIndex] = new Vector2(meshGenerator.vertices[curIndex].x, meshGenerator.vertices[curIndex].z);
+					}
+					if (uvMode == "repeat") { //repeat texture over the length of the polygons
+						meshGenerator.uvs[curIndex] = new Vector2(lIncrement * (i + (j < 2 ? 0 : 1)), wIncrement * (r + (j % 2 == 0 ? 0 : 1)));
+					}
+					else if (uvMode == "fit") { //stretch texture to fit polygons
+						meshGenerator.uvs[curIndex] = new Vector2((float)(i + (j < 2 ? 0 : 1)) / lSegs, (float)(r + (j % 2 == 0 ? 0 : 1)) / wSegs);
+					}
 				}
 			}
 		}
@@ -107,17 +118,17 @@ public class MeshShapes : MonoBehaviour {
 
 	List<int> generateFlower(int numPetals) {
 		int startVertIndex = meshGenerator.vertices.Count;
-		int petalNum = 1;
-		for (int i = 0; i < 2; ++i) {
+		int petalNum = 3;
+		for (int i = 0; i < 3; ++i) {
 			Vector3 curPos = new Vector3(i, 0, 0);
-			for (int r = 0; r < 2; ++r) {
+			for (int r = 0; r < 3; ++r) {
 				generateCylinder(.2f, .025f, 3, true, "centerCap", curPos);
 				//int petalNum = Random.Range(3, 8);
 				Quaternion rot = meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1), Vector3.left, 45);
 				rot = meshGenerator.rotateQuaternion(rot, Vector3.up, 50);
-				float rotIncr = 180f / petalNum;
+				float rotIncr = 360f / petalNum;
 				for (int j = 0; j < petalNum; ++j) {
-					generatePlane(1, 1, .1f, .04f,"centerCap",curPos,rot,true);
+					generatePlane(1, 1, .1f, .03f,"centerCap",curPos,rot,true,"fit");
 					rot = meshGenerator.rotateQuaternion(rot, Vector3.left, rotIncr);
 				}
 				///generateSphere(.05f, 4, true, curPos, meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1), Vector3.left, -90));

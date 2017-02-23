@@ -273,7 +273,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ada869aeb39bfb0408fbeab76f97ecb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  material: {fileID: 2100000, guid: e3f2bd39b47c2ad4a9fe5b26f9e176ba, type: 2}
+  material: {fileID: 2100000, guid: 19632ce44015e564485facc2fb50c4de, type: 2}
   triangles: 
   vertices: []
   uvs: []
