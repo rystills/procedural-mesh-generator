@@ -196,6 +196,7 @@ GameObject:
   - component: {fileID: 667193070}
   - component: {fileID: 667193069}
   - component: {fileID: 667193068}
+  - component: {fileID: 667193072}
   m_Layer: 0
   m_Name: flower
   m_TagString: Untagged
@@ -227,12 +228,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96534bcea7b3b3a4492cb287e13886dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shape: flower
-  args:
-  - 200
-  - 200
-  - 50
-  - 50
+  shape: 
+  args: []
   displacementStrength: 0
 --- !u!114 &667193069
 MonoBehaviour:
@@ -278,6 +275,17 @@ MonoBehaviour:
   vertices: []
   uvs: []
   normals: []
+--- !u!114 &667193072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 667193066}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 396eb62d95f53174d9b40e280ffa07d7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &808286551
 GameObject:
   m_ObjectHideFlags: 0

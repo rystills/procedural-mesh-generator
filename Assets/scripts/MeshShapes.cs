@@ -10,6 +10,10 @@ public class MeshShapes : MonoBehaviour {
 	public List<string> args;
 	public float displacementStrength;
 
+	void Awake() {
+		meshGenerator = this.GetComponent<GenerateMesh>();
+	}
+
 	// Use this for initialization
 	void Start() {
 		float startTime = Time.realtimeSinceStartup; //record start time at beginning of function
@@ -30,19 +34,22 @@ public class MeshShapes : MonoBehaviour {
 		else if (shape == "plane") {
 			verts = generatePlane(float.Parse(args[0]), float.Parse(args[1]), float.Parse(args[2]), float.Parse(args[3]), "edge", new Vector3(1, 0, 0), meshGenerator.rotateQuaternion(new Quaternion(0,0,0,1),Vector3.forward,90));
 		}
-		else if (shape == "flower") {
-			verts = generateFlower(int.Parse(args[0]));
-		}
-		if (displacementStrength > 0) {
-			displaceVerts(displacementStrength, verts[0], verts[1]);
-		}
-		meshGenerator.finalizeMesh();
+		if (verts != null) {
+			if (displacementStrength > 0) {
+				displaceVerts(displacementStrength, verts[0], verts[1]);
+			}
+			meshGenerator.finalizeMesh();
 
+			printBuildTime(startTime);
+		}
+	}
+
+	public void printBuildTime(float startTime) {
 		//calculate end time and print args and time
 		float endTime = Time.realtimeSinceStartup;
 		string debugString = "time to generate " + shape + "(";
 		for (int i = 0; i < args.Count; ++i) {
-			debugString += args[i] + (i == args.Count - 1 ? ")" : ", "); 
+			debugString += args[i] + (i == args.Count - 1 ? ")" : ", ");
 		}
 		debugString += ": " + (endTime - startTime) + " seconds";
 		Debug.Log(debugString);
@@ -70,7 +77,7 @@ public class MeshShapes : MonoBehaviour {
 	}
 
 	//construct a plane, with lSegs and wSegs segs totaling length and width
-	List<int> generatePlane(float lSegs, float wSegs, float length, float width, string startType = "edge", Vector3? basePos = null, Quaternion? baseRot = null, bool doubleSided = false, string uvMode = "flat repeaet") {
+	public List<int> generatePlane(float lSegs, float wSegs, float length, float width, string startType = "edge", Vector3? basePos = null, Quaternion? baseRot = null, bool doubleSided = false, string uvMode = "flat repeat") {
 		if (!baseRot.HasValue) {
 			baseRot = new Quaternion(0, 0, 0, 1);
 		}
@@ -116,32 +123,8 @@ public class MeshShapes : MonoBehaviour {
 		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
 	}
 
-	List<int> generateFlower(int numPetals) {
-		int startVertIndex = meshGenerator.vertices.Count;
-		int petalNum = 3;
-		for (int i = 0; i < 3; ++i) {
-			Vector3 curPos = new Vector3(i, 0, 0);
-			for (int r = 0; r < 3; ++r) {
-				generateCylinder(.2f, .025f, 3, true, "centerCap", curPos);
-				//int petalNum = Random.Range(3, 8);
-				Quaternion rot = meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1), Vector3.left, 45);
-				rot = meshGenerator.rotateQuaternion(rot, Vector3.up, 50);
-				float rotIncr = 360f / petalNum;
-				for (int j = 0; j < petalNum; ++j) {
-					generatePlane(1, 1, .1f, .03f,"centerCap",curPos,rot,true,"fit");
-					rot = meshGenerator.rotateQuaternion(rot, Vector3.left, rotIncr);
-				}
-				///generateSphere(.05f, 4, true, curPos, meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1), Vector3.left, -90));
-				curPos.y += 1;
-				petalNum++;
-			}
-		}
-		transform.rotation = meshGenerator.rotateQuaternion(transform.rotation, Vector3.left, -90);
-		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
-	}
-
 	//construct a sphere, with segs connecting verts which are radius distance from position
-	List<int> generateSphere(float radius, float  segs, bool isHemisphere = false, Vector3? basePos = null, Quaternion? baseRot = null) {
+	public List<int> generateSphere(float radius, float  segs, bool isHemisphere = false, Vector3? basePos = null, Quaternion? baseRot = null) {
 		if (!baseRot.HasValue) {
 			baseRot = new Quaternion(0, 0, 0, 1);
 		}
@@ -190,7 +173,7 @@ public class MeshShapes : MonoBehaviour {
 	}
 
 	//construct a spiral, with segs quads of width, extents, rotating each quad by iterAngle
-	List<int> generateSpiral(float width, float extents, int segs, float iterAngle) {
+	public List<int> generateSpiral(float width, float extents, int segs, float iterAngle) {
 		int startVertIndex = meshGenerator.vertices.Count;
 		Vector3 rotAxis = Vector3.forward;
 		Quaternion rot = new Quaternion(0, 0, 0, 1);
@@ -209,7 +192,7 @@ public class MeshShapes : MonoBehaviour {
 	}
 
 	//construct a segs-sided cylinder with width and extents
-	List<int> generateCylinder(float width, float extents, int segs, bool cap = false, string startType = "edge", Vector3? basePos = null, Quaternion? baseRot = null) {
+	public List<int> generateCylinder(float width, float extents, int segs, bool cap = false, string startType = "edge", Vector3? basePos = null, Quaternion? baseRot = null) {
 		if (!baseRot.HasValue) {
 			baseRot = new Quaternion(0, 0, 0, 1);
 		}
@@ -255,7 +238,7 @@ public class MeshShapes : MonoBehaviour {
 	}
 
 	//calculate the center position of a list of verts
-	Vector3 calculateCenter(List<int> verts) {
+	public Vector3 calculateCenter(List<int> verts) {
 		Vector3 center = Vector3.zero;
 		for (int i = 0; i < verts.Count; ++i) {
 			center += meshGenerator.vertices[verts[i]];
@@ -264,7 +247,7 @@ public class MeshShapes : MonoBehaviour {
 	}
 
 	//calculate the center position of verts between startIndex and endIndex (both inclusive)
-	Vector3 calculateCenter(int startIndex, int endIndex) {
+	public Vector3 calculateCenter(int startIndex, int endIndex) {
 		Vector3 center = Vector3.zero;
 		for (int i = startIndex; i <= endIndex; ++i) {
 			center += meshGenerator.vertices[i];
@@ -293,7 +276,7 @@ public class MeshShapes : MonoBehaviour {
 	}
 
 	//construct a box, with length, width, height segs
-	List<int> generateBox(float length, float width, float height) {
+	public List<int> generateBox(float length, float width, float height) {
 		int startVertIndex = meshGenerator.vertices.Count;
 		Vector3 rotAxis = Vector3.forward;
 		Quaternion rot = new Quaternion(0, 0, 0, 1);
