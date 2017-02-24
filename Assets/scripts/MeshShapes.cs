@@ -76,6 +76,28 @@ public class MeshShapes : MonoBehaviour {
 		}
 	}
 
+	public List<int> generateFlower(Vector3? basePos = null, Quaternion? baseRot = null, int stemSides = 6, float stemHeight = .18f, float stemWidth = .02f,
+		int numPetals = 12, float petalLength = .09f, float petalWidth = .025f) {
+		int startVertIndex = meshGenerator.vertices.Count;
+		if (!baseRot.HasValue) {
+			baseRot = new Quaternion(0, 0, 0, 1);
+		}
+		if (!basePos.HasValue) {
+			basePos = Vector3.zero;
+		}
+		Vector3 curPos = basePos.Value;
+		generateCylinder(stemHeight, stemWidth, stemSides, true, "centerCap", curPos,baseRot.Value);
+		//int petalNum = Random.Range(3, 8);
+		Quaternion rot = meshGenerator.rotateQuaternion(baseRot.Value, Vector3.left, 45);
+		rot = meshGenerator.rotateQuaternion(rot, Vector3.up, 50);
+		float rotIncr = 360f / numPetals;
+		for (int j = 0; j < numPetals; ++j) {
+			generatePlane(1, 1, petalLength, petalWidth, "centerCap", curPos, rot, true, "fit");
+			rot = meshGenerator.rotateQuaternion(rot, Vector3.left, rotIncr);
+		}
+		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
+	}
+
 	//construct a plane, with lSegs and wSegs segs totaling length and width
 	public List<int> generatePlane(float lSegs, float wSegs, float length, float width, string startType = "edge", Vector3? basePos = null, Quaternion? baseRot = null, bool doubleSided = false, string uvMode = "flat repeat") {
 		if (!baseRot.HasValue) {
