@@ -38,7 +38,7 @@ public class MeshShapes : MonoBehaviour {
 			if (displacementStrength > 0) {
 				displaceVerts(displacementStrength, verts[0], verts[1]);
 			}
-			meshGenerator.finalizeMesh();
+			meshGenerator.finalizeMesh(false,true,true,true); //calculate bounds and collider for default shapes
 
 			printBuildTime(startTime);
 		}
@@ -77,7 +77,7 @@ public class MeshShapes : MonoBehaviour {
 	}
 
 	public List<int> generateFlower(Vector3? basePos = null, Quaternion? baseRot = null, int stemSides = 6, float stemHeight = .18f, float stemWidth = .02f,
-		int numPetals = 12, float petalLength = .09f, float petalWidth = .025f) {
+		int numPetals = 12, float petalLength = .09f, float petalWidth = .025f, int numPetalSegs = 3, float petalSegRot = 9f) {
 		int startVertIndex = meshGenerator.vertices.Count;
 		if (!baseRot.HasValue) {
 			baseRot = new Quaternion(0, 0, 0, 1);
@@ -87,12 +87,20 @@ public class MeshShapes : MonoBehaviour {
 		}
 		Vector3 curPos = basePos.Value;
 		generateCylinder(stemHeight, stemWidth, stemSides, true, "centerCap", curPos,baseRot.Value);
-		//int petalNum = Random.Range(3, 8);
 		Quaternion rot = meshGenerator.rotateQuaternion(baseRot.Value, Vector3.left, 45);
 		rot = meshGenerator.rotateQuaternion(rot, Vector3.up, 50);
 		float rotIncr = 360f / numPetals;
+		float petalSegLength = petalLength / (float)numPetalSegs;
 		for (int j = 0; j < numPetals; ++j) {
-			generatePlane(1, 1, petalLength, petalWidth, "centerCap", curPos, rot, true, "fit");
+			Quaternion curPetalRot = rot;
+			Vector3 curPetalPos = curPos;
+			for (int i = 0; i < numPetalSegs; ++i) { //generate input number of segments for each petal, applying input rotation after generating each segment
+				generatePlane(1, 1, petalSegLength, petalWidth, "centerCap", curPetalPos, curPetalRot, true, "fit");
+				Vector3 forwardDir = curPetalRot * Vector3.forward;
+				curPetalPos = curPetalPos + (forwardDir.normalized * petalSegLength);
+				curPetalRot = meshGenerator.rotateQuaternion(curPetalRot, Vector3.up, petalSegRot);
+
+			}
 			rot = meshGenerator.rotateQuaternion(rot, Vector3.left, rotIncr);
 		}
 		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
