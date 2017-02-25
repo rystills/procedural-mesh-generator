@@ -77,7 +77,7 @@ public class MeshShapes : MonoBehaviour {
 	}
 
 	public List<int> generateFlower(Vector3? basePos = null, Quaternion? baseRot = null, int stemSides = 6, float stemHeight = .18f, float stemWidth = .02f,
-		int numPetals = 12, float petalLength = .09f, float petalWidth = .025f, int numPetalSegs = 3, float petalSegRot = 9f) {
+		float petalTilt = 45f, int numPetals = 12, float petalLength = .09f, float petalWidth = .025f, int numPetalSegs = 3, float petalSegRot = 9f) {
 		int startVertIndex = meshGenerator.vertices.Count;
 		if (!baseRot.HasValue) {
 			baseRot = new Quaternion(0, 0, 0, 1);
@@ -87,8 +87,8 @@ public class MeshShapes : MonoBehaviour {
 		}
 		Vector3 curPos = basePos.Value;
 		generateCylinder(stemHeight, stemWidth, stemSides, true, "centerCap", curPos,baseRot.Value);
-		Quaternion rot = meshGenerator.rotateQuaternion(baseRot.Value, Vector3.left, 45);
-		rot = meshGenerator.rotateQuaternion(rot, Vector3.up, 50);
+		Quaternion rot = baseRot.Value;
+		rot = meshGenerator.rotateQuaternion(rot, Vector3.up, petalTilt);
 		float rotIncr = 360f / numPetals;
 		float petalSegLength = petalLength / (float)numPetalSegs;
 		for (int j = 0; j < numPetals; ++j) {
