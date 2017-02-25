@@ -5,13 +5,17 @@ using UnityEngine;
 public class GenerateFlowers : MonoBehaviour {
 	GenerateMesh meshGenerator;
 	MeshShapes shapes;
+	bool firstRun = true;
 
 	void Awake() {
 		meshGenerator = this.GetComponent<GenerateMesh>();
 	}
 
-	// Use this for initialization
-	void Start() {
+	void Update() {
+		if (!firstRun) {
+			return;
+		}
+		firstRun = false;
 		float startTime = Time.realtimeSinceStartup; //record start time at beginning of function
 		shapes = this.GetComponent<MeshShapes>();
 		populateFlowers(3,3); //restrict stems to 3 sides only
@@ -24,8 +28,8 @@ public class GenerateFlowers : MonoBehaviour {
 		int minPetalSegs = 1, int maxPetalSegs = 6, float minPetalSegRot = 5f, float maxPetalSegRot = 14f) {
 		int startVertIndex = meshGenerator.vertices.Count;
 		for (int i = 0; i < 50; ++i) {
-			Vector3 curPos = new Vector3(1.5f + i, .5f, .25f);
 			for (int r = 0; r < 50; ++r) {
+				Vector3 curPos = new Vector3(1.5f + Random.Range(0, 49f), .5f, .25f + Random.Range(0, 49f));
 				int stemSides = Random.Range(minStemSides, maxStemSides);
 				float stemHeight = Random.Range(minStemHeight, maxStemHeight);
 				float stemWidth = Random.Range(minStemWidth, maxStemWidth);
@@ -45,10 +49,8 @@ public class GenerateFlowers : MonoBehaviour {
 				//move flower to the ground
 				RaycastHit hit;
 				if (Physics.Raycast(go.transform.position, Vector3.down, out hit)) {
-					Debug.Log("hit");
-					go.transform.position = new Vector3(go.transform.position.x, go.transform.position.y - hit.distance, go.transform.position.z);
+					go.transform.position = new Vector3(go.transform.position.x, go.transform.position.y - hit.distance + stemHeight, go.transform.position.z);
 				}
-				curPos.z += 1;
 			}
 		}
 	}
