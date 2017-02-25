@@ -25,7 +25,8 @@ public class GenerateFlowers : MonoBehaviour {
 	//generate numerous flowers with properties between the input ranges
 	void populateFlowers(int minStemSides = 3, int maxStemSides = 12, float minStemHeight = .12f, float maxStemHeight = .24f, float minStemWidth = .01f, float maxStemWidth = .03f, 
 		float minTilt = 0, float maxTilt = 90f, int minPetals = 8, int maxPetals = 18, float minPetalLength = .04f, float maxPetalLength = .14f, float minPetalWidth = .015f, 
-		float maxPetalWidth = .035f, int minPetalSegs = 1, int maxPetalSegs = 6, float minPetalSegRot = 5f, float maxPetalSegRot = 14f) {
+		float maxPetalWidth = .035f, int minPetalSegs = 2, int maxPetalSegs = 6, float minPetalSegRot = 5f, float maxPetalSegRot = 14f) {
+		GameObject flowerParent = new GameObject();
 		int startVertIndex = meshGenerator.vertices.Count;
 		for (int i = 0; i < 50; ++i) {
 			for (int r = 0; r < 50; ++r) {
@@ -47,7 +48,9 @@ public class GenerateFlowers : MonoBehaviour {
 				shapes.generateFlower(null, meshGenerator.rotateQuaternion(new Quaternion(0,0,0,1),Vector3.left,-90f), stemSides,stemHeight,stemWidth, petalTilt, numPetals, petalLength, petalWidth, petalSegs, petalSegRot);
 				newGenerator.finalizeMesh();
 				go.GetComponent<MeshRenderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
-				
+				go.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+				go.transform.SetParent(flowerParent.transform, true);
+
 				//move flower to the ground
 				RaycastHit hit;
 				if (Physics.Raycast(go.transform.position, Vector3.down, out hit)) {
