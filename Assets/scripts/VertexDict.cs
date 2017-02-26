@@ -103,7 +103,7 @@ public class VertexData {
 	}	
 
 	//add another index to trianglesIndices
-	public void adadTriangleIndex(int index) {
+	public void addTriangleIndex(int index) {
 		this.trianglesIndices.Add(index);
 	}
 }

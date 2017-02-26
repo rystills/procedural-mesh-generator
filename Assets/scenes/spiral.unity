@@ -266,7 +266,7 @@ MonoBehaviour:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1060770007}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9e5febc83875134409f25c8c85558fd8, type: 3}
   m_Name: 
@@ -298,7 +298,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ada869aeb39bfb0408fbeab76f97ecb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  material: {fileID: 2100000, guid: e3f2bd39b47c2ad4a9fe5b26f9e176ba, type: 2}
+  material: {fileID: 2100000, guid: e689cb7f2da84714e92fab394b4bfc72, type: 2}
   triangles: 
   vertices: []
   uvs: []

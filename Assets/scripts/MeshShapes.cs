@@ -246,9 +246,7 @@ public class MeshShapes : MonoBehaviour {
 			rot = meshGenerator.rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
 			if (cap) {
 				frontVerts.Add(meshGenerator.vertices.Count - 2);
-				//frontVerts.Add(meshGenerator.vertices.Count - 4);
 				backVerts.Add(meshGenerator.vertices.Count - 3);
-				//backVerts.Add(meshGenerator.vertices.Count - 1);
 			}
 		}
 		if (segs == 0 || startVertIndex == meshGenerator.vertices.Count) { //if we didnt make any new verts, return an empty list
@@ -316,7 +314,7 @@ public class MeshShapes : MonoBehaviour {
 			rot = meshGenerator.rotateQuaternion(rot, rotAxis, 90); //update rotation
 		}
 		Quaternion leftRot = meshGenerator.rotateQuaternion(rot, Vector3.up, 90);
-		meshGenerator.propagateQuad(pos, leftRot, 1, 1, false); //generate 'left' sidee
+		meshGenerator.propagateQuad(pos, leftRot, 1, 1, false); //generate 'left' side
 		meshGenerator.propagateQuad(pos + Vector3.forward.normalized, leftRot, 1, 1, true); //generate 'right' side
 		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
 	}

@@ -106,10 +106,10 @@ public class GenerateMesh : MonoBehaviour {
 
 		//generate the necessary tris (because this method adds a single quad, we need two new triangles, or 6 points in our list of tris)
 		//first new tri
-		addTri(botRightVert.verticesIndex, topRightVert.verticesIndex, botLeftVert.verticesIndex);
+		addTri(botRightVert, topRightVert, botLeftVert);
 		//second new tri
 		if (topLeftVert != null) {
-			addTri(topRightVert.verticesIndex, topLeftVert.verticesIndex, botLeftVert.verticesIndex);
+			addTri(topRightVert, topLeftVert, botLeftVert);
 		}
 		
 		return returnPos == "botLeft" ? botLeftPos : topRightPos;
@@ -118,10 +118,17 @@ public class GenerateMesh : MonoBehaviour {
 	//tri modifiers
 
 	//simple helper method to add 3 points to the triangles list
-	public void addTri(int index1, int index2, int index3, bool flip = false) {
-		triangles.Add(flip ? index3 : index1);
-		triangles.Add(index2);
-		triangles.Add(flip ? index1 : index3);
+	public void addTri(VertexData vert1, VertexData vert2, VertexData vert3, bool flip = false, bool addTriangleIndices = true) {
+		triangles.Add(flip ? vert3.verticesIndex : vert1.verticesIndex);
+		triangles.Add(vert2.verticesIndex);
+		triangles.Add(flip ? vert1.verticesIndex : vert3.verticesIndex);
+
+		if (addTriangleIndices) {
+			//add a triangles index to each vert
+			vert1.addTriangleIndex(triangles.Count - (flip ? 1 : 3));
+			vert1.addTriangleIndex(triangles.Count - 2);
+			vert1.addTriangleIndex(triangles.Count - (flip ? 3 : 1));
+		}
 	}
 
 	//vert modifiers
