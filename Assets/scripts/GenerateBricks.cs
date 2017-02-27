@@ -31,7 +31,8 @@ public class GenerateBricks : MonoBehaviour {
 		go.name = "brick seams";
 		GenerateMesh newGenerator = go.AddComponent<GenerateMesh>();
 		MeshShapes shapes = go.AddComponent<MeshShapes>();
-		shapes.generateBox(50 * (length + .02f) - .4f, 50 * (width + .02f) - .4f, height - maxShiftOut - .1f, new Vector3(.2f, 49 * (length + .02f) - .02f, -.05f), meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1), Vector3.left, -90f));
+		shapes.generateBox(50 * (length + .02f) - .12f, 50 * (width + .02f) - .12f, height - maxShiftOut - .1f, 
+			new Vector3(.05f, 49 * (length + .02f) - .05f, -.05f), meshGenerator.rotateQuaternion(new Quaternion(0, 0, 0, 1), Vector3.left, -90f));
 		newGenerator.finalizeMesh();
 		go.GetComponent<MeshRenderer>().material = this.GetComponent<GenerateMesh>().material2;
 		go.transform.SetParent(brickParent.transform, true);
