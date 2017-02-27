@@ -27,7 +27,7 @@ public class GenerateFlowers : MonoBehaviour {
 		float minTilt = 0, float maxTilt = 90f, int minPetals = 8, int maxPetals = 18, float minPetalLength = .04f, float maxPetalLength = .14f, float minPetalWidth = .015f, 
 		float maxPetalWidth = .035f, int minPetalSegs = 2, int maxPetalSegs = 6, float minPetalSegRot = 5f, float maxPetalSegRot = 14f) {
 		GameObject flowerParent = new GameObject();
-		int startVertIndex = meshGenerator.vertices.Count;
+		flowerParent.name = "flower container";
 		for (int i = 0; i < 50; ++i) {
 			for (int r = 0; r < 50; ++r) {
 				Vector3 curPos = new Vector3(1.5f + Random.Range(0, 49f), .5f, .25f + Random.Range(0, 49f));
@@ -41,6 +41,7 @@ public class GenerateFlowers : MonoBehaviour {
 				int petalSegs = Random.Range(minPetalSegs, maxPetalSegs);
 				float petalSegRot = Random.Range(minPetalSegRot, maxPetalSegRot);
 				GameObject go = new GameObject();
+				go.name = "flower";
 				go.transform.position = curPos;
 				go.transform.rotation = meshGenerator.rotateQuaternion(go.transform.rotation, Vector3.up, Random.Range(0, 359f));
 				GenerateMesh newGenerator = go.AddComponent<GenerateMesh>();

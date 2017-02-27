@@ -304,18 +304,24 @@ public class MeshShapes : MonoBehaviour {
 	}
 
 	//construct a box, with length, width, height segs
-	public List<int> generateBox(float length, float width, float height) {
+	public List<int> generateBox(float length, float width, float height, Vector3? basePos = null, Quaternion? baseRot = null) {
+		if (!baseRot.HasValue) {
+			baseRot = new Quaternion(0, 0, 0, 1);
+		}
+		if (!basePos.HasValue) {
+			basePos = Vector3.zero;
+		}
 		int startVertIndex = meshGenerator.vertices.Count;
 		Vector3 rotAxis = Vector3.forward;
-		Quaternion rot = new Quaternion(0, 0, 0, 1);
-		Vector3 pos = new Vector3(0, 0, 0);
+		Quaternion rot = baseRot.Value;
+		Vector3 pos = basePos.Value;
 		for (int i = 0; i < 4; ++i) { //generate a strip of 4 sides
-			pos = meshGenerator.propagateQuad(pos, rot, 1, 1, true); //generate forward-facing quad and update current vertex position
+			pos = meshGenerator.propagateQuad(pos, rot, length, i%2 == 0 ? height : width, true); //generate forward-facing quad and update current vertex position
 			rot = meshGenerator.rotateQuaternion(rot, rotAxis, 90); //update rotation
 		}
 		Quaternion leftRot = meshGenerator.rotateQuaternion(rot, Vector3.up, 90);
-		meshGenerator.propagateQuad(pos, leftRot, 1, 1, false); //generate 'left' side
-		meshGenerator.propagateQuad(pos + Vector3.forward.normalized, leftRot, 1, 1, true); //generate 'right' side
+		meshGenerator.propagateQuad(pos, leftRot, width, height, false); //generate top side
+		meshGenerator.propagateQuad(pos + baseRot.Value * Vector3.forward.normalized * length, leftRot, width, height, true); //generate bottom side
 		return new List<int> { startVertIndex, meshGenerator.vertices.Count - 1 };
 	}
 }
