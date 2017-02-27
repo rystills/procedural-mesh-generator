@@ -28,6 +28,7 @@ public class GenerateFlowers : MonoBehaviour {
 		float maxPetalWidth = .035f, int minPetalSegs = 2, int maxPetalSegs = 6, float minPetalSegRot = 5f, float maxPetalSegRot = 14f) {
 		GameObject flowerParent = new GameObject();
 		flowerParent.name = "flower container";
+		//generate a 50x50 array of flowers on the x,z axes
 		for (int i = 0; i < 50; ++i) {
 			for (int r = 0; r < 50; ++r) {
 				Vector3 curPos = new Vector3(1.5f + Random.Range(0, 49f), .5f, .25f + Random.Range(0, 49f));
@@ -48,6 +49,7 @@ public class GenerateFlowers : MonoBehaviour {
 				MeshShapes shapes = go.AddComponent<MeshShapes>();
 				shapes.generateFlower(null, meshGenerator.rotateQuaternion(new Quaternion(0,0,0,1),Vector3.left,-90f), stemSides,stemHeight,stemWidth, petalTilt, numPetals, petalLength, petalWidth, petalSegs, petalSegRot);
 				newGenerator.finalizeMesh();
+				go.GetComponent<MeshRenderer>().material = this.GetComponent<GenerateMesh>().material;
 				go.GetComponent<MeshRenderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
 				go.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 				go.transform.SetParent(flowerParent.transform, true);

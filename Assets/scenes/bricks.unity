@@ -266,7 +266,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ada869aeb39bfb0408fbeab76f97ecb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  material: {fileID: 2100000, guid: e689cb7f2da84714e92fab394b4bfc72, type: 2}
+  material: {fileID: 2100000, guid: c2e780ccc7317cb418e526ac7e488cf9, type: 2}
+  material2: {fileID: 2100000, guid: 3a52b0aacd11d534ebeb8b2de7d67a35, type: 2}
   triangles: 
   vertices: []
   uvs: []
@@ -499,6 +500,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   material: {fileID: 2100000, guid: e689cb7f2da84714e92fab394b4bfc72, type: 2}
+  material2: {fileID: 0}
   triangles: 
   vertices: []
   uvs: []

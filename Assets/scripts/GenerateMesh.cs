@@ -5,6 +5,7 @@ using System.Linq;
 
 public class GenerateMesh : MonoBehaviour {
 	public Material material;
+	public Material material2;
 	public List<int> triangles;
 	public VertexDict vertDict;
 	public List<Vector3> vertices;
