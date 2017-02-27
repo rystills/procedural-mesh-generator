@@ -198,7 +198,7 @@ GameObject:
   - component: {fileID: 808286553}
   - component: {fileID: 808286557}
   m_Layer: 0
-  m_Name: brick generator
+  m_Name: pipe generator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -280,7 +280,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 808286551}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b903e80b3a272ea47a3ef7e4e682f475, type: 3}
+  m_Script: {fileID: 11500000, guid: 618214a2f801e6447979acc7df95abcb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &809293964

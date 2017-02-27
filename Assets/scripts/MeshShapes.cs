@@ -304,7 +304,7 @@ public class MeshShapes : MonoBehaviour {
 	}
 
 	//construct a box, with length, width, height segs
-	public List<int> generateBox(float length, float width, float height, Vector3? basePos = null, Quaternion? baseRot = null) {
+	public List<int> generateBox(float length, float width, float height, Vector3? basePos = null, Quaternion? baseRot = null, string uvMode = "flat repeat") {
 		if (!baseRot.HasValue) {
 			baseRot = new Quaternion(0, 0, 0, 1);
 		}

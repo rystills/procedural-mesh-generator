@@ -31,6 +31,7 @@ public class GenerateFlowers : MonoBehaviour {
 		//generate a 50x50 array of flowers on the x,z axes
 		for (int i = 0; i < 50; ++i) {
 			for (int r = 0; r < 50; ++r) {
+				//calculate random position and properties within input range
 				Vector3 curPos = new Vector3(1.5f + Random.Range(0, 49f), .5f, .25f + Random.Range(0, 49f));
 				int stemSides = Random.Range(minStemSides, maxStemSides);
 				float stemHeight = Random.Range(minStemHeight, maxStemHeight);
@@ -41,6 +42,7 @@ public class GenerateFlowers : MonoBehaviour {
 				float petalWidth = Random.Range(minPetalWidth, maxPetalWidth);
 				int petalSegs = Random.Range(minPetalSegs, maxPetalSegs);
 				float petalSegRot = Random.Range(minPetalSegRot, maxPetalSegRot);
+
 				GameObject go = new GameObject();
 				go.name = "flower";
 				go.transform.position = curPos;
