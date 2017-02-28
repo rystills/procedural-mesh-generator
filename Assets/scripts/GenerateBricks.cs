@@ -22,7 +22,7 @@ public class GenerateBricks : MonoBehaviour {
 		Debug.Log("Time to generate bricks: " + (Time.realtimeSinceStartup - startTime).ToString());
 	}
 
-	//generate numerous bricks with sproperties between the input ranges
+	//generate numerous bricks with properties between the input ranges
 	void populateBricks(float length = .3f, float width = .6f, float height = .4f, float maxShiftOut = .15f) {
 		GameObject brickParent = new GameObject();
 		brickParent.name = "brick container";

@@ -221,8 +221,8 @@ public class MeshShapes : MonoBehaviour {
 
 	}
 
-	//construct a segs-sided cylinder with width and extents
-	public List<int> generateCylinder(float width, float extents, int segs, bool cap = false, string startType = "edge", Vector3? basePos = null, Quaternion? baseRot = null) {
+	//construct a segs-sided cylinder with extents and circumference
+	public List<int> generateCylinder(float extents, float circumference, int segs, bool cap = false, string startType = "edge", Vector3? basePos = null, Quaternion? baseRot = null,bool ignoreBackFacing = false) {
 		if (!baseRot.HasValue) {
 			baseRot = new Quaternion(0, 0, 0, 1);
 		}
@@ -234,15 +234,15 @@ public class MeshShapes : MonoBehaviour {
 		Quaternion rot = baseRot.Value;
 		Vector3 pos = basePos.Value;
 		float iterAngle = 360 / (float)segs;
-		float iterExtents = extents / (float)segs;
+		float itercircumference = circumference / (float)segs;
 		List<int> frontVerts = new List<int>();
 		List<int> backVerts = new List<int>();
 		for (int i = 0; i < segs; ++i) {
 			
-			if (!cap) { //don't bother generating interior faces if we are capped, since they will not be visible anyway
-				meshGenerator.propagateQuad(pos, rot, width, iterExtents, false); //generate forward-facing quad and update current vertex position
+			if ((!cap) && (!ignoreBackFacing)) { //don't bother generating interior faces if we are capped, since they will not be visible anyway
+				meshGenerator.propagateQuad(pos, rot, extents, itercircumference, false); //generate forward-facing quad and update current vertex position
 			}
-			pos = meshGenerator.propagateQuad(pos, rot, width, iterExtents, true); //generate back-facing quad (flipped normal)
+			pos = meshGenerator.propagateQuad(pos, rot, extents, itercircumference, true); //generate back-facing quad (flipped normal)
 			rot = meshGenerator.rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
 			if (cap || startType == "centerCap") { //store cap verts if we are capping, or if we need them to calculate cap center
 				frontVerts.Add(meshGenerator.vertices.Count - 2);
