@@ -244,7 +244,7 @@ public class MeshShapes : MonoBehaviour {
 			}
 			pos = meshGenerator.propagateQuad(pos, rot, width, iterExtents, true); //generate back-facing quad (flipped normal)
 			rot = meshGenerator.rotateQuaternion(rot, rotAxis, iterAngle); //update rotation
-			if (cap) {
+			if (cap || startType == "centerCap") { //store cap verts if we are capping, or if we need them to calculate cap center
 				frontVerts.Add(meshGenerator.vertices.Count - 2);
 				backVerts.Add(meshGenerator.vertices.Count - 3);
 			}
