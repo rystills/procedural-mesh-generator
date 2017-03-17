@@ -76,8 +76,10 @@ public class MeshShapes : MonoBehaviour {
 		}
 	}
 
-	public List<int> generateFlower(Vector3? basePos = null, Quaternion? baseRot = null, int stemSides = 6, float stemHeight = .18f, float stemWidth = .02f,
-		float petalTilt = 45f, int numPetals = 12, float petalLength = .09f, float petalWidth = .025f, int numPetalSegs = 3, float petalSegRot = 9f) {
+	//construct a flower comprised of a cylindrical stem and curved plane petals
+	public List<int> generateFlower(Vector3? basePos = null, Quaternion? baseRot = null, int stemSides = 6, 
+		float stemHeight = .18f, float stemWidth = .02f, float petalTilt = 45f, int numPetals = 12, 
+		float petalLength = .09f, float petalWidth = .025f, int numPetalSegs = 3, float petalSegRot = 9f) {
 		int startVertIndex = meshGenerator.vertices.Count;
 		if (!baseRot.HasValue) {
 			baseRot = new Quaternion(0, 0, 0, 1);
@@ -94,7 +96,8 @@ public class MeshShapes : MonoBehaviour {
 		for (int j = 0; j < numPetals; ++j) {
 			Quaternion curPetalRot = rot;
 			Vector3 curPetalPos = curPos;
-			for (int i = 0; i < numPetalSegs; ++i) { //generate input number of segments for each petal, applying input rotation after generating each segment
+			//generate input number of segments for each petal, applying input rotation after generating each segment
+			for (int i = 0; i < numPetalSegs; ++i) { 
 				generatePlane(1, 1, petalSegLength, petalWidth, "centerCap", curPetalPos, curPetalRot, true, "fit");
 				Vector3 forwardDir = curPetalRot * Vector3.forward;
 				curPetalPos = curPetalPos + (forwardDir.normalized * petalSegLength);

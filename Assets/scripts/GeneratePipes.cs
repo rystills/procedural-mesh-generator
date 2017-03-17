@@ -68,9 +68,9 @@ public class GeneratePipes : MonoBehaviour {
 				GenerateMesh curGenerator = go.GetComponent<GenerateMesh>();
 
 				for (int r = 0; r < pipeSegs; ++r) {
-					Vector3 vert0 = prevGenerator.vertices[6 + r*8] + (prevPipe.transform.position - curPos); //start front vert index is 6, each subsequent vert is 8 more
+					Vector3 vert0 = prevGenerator.vertices[6 + r*8] + (prevPipe.transform.position - curPos); //start front vert index is 6, each subsequent vert is 8 more (4 outside, 4 inside per quad)
 					Vector3 vert1 = prevGenerator.vertices[6 + (r+1)%pipeSegs * 8] + (prevPipe.transform.position - curPos);
-					Vector3 vert2 = curGenerator.vertices[5 + r * 8]; //start back vert index is 5, each subsequent vert is 8 more
+					Vector3 vert2 = curGenerator.vertices[5 + r * 8]; //start back vert index is 5, each subsequent vert is 8 more (4 outside, 4 inside per quad)
 					Vector3 vert3 = curGenerator.vertices[5 + (r + 1) % pipeSegs * 8];
 					elbowGenerator.generateQuad(vert0, vert1, vert2, vert3); //generate outside quad
 					elbowGenerator.generateQuad(vert0, vert2, vert1, vert3); //generate inside (flipped) quad
